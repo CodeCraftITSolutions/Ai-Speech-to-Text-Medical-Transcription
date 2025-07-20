@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --card: #ffffff;
+    --card-foreground: #0a0a0a;
+    --popover: #ffffff;
+    --popover-foreground: #0a0a0a;
+    --primary: #171717;
+    --primary-foreground: #fafafe;
+    --secondary: #f5f5f5;
+    --secondary-foreground: #171717;
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+    --accent: #f5f5f5;
+    --accent-foreground: #171717;
+    --destructive: #df1f1f;
+    --destructive-foreground: #fafafe;
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #0a0a0a;
+    --chart-1: #d25d2b;
+    --chart-2: #2b9470;
+    --chart-3: #27627c;
+    --chart-4: #e3c437;
+    --chart-5: #e4942d;
+    --radius: 0.5rem;
+    --sidebar-background: #f7f7f7;
+    --sidebar-foreground: #3a3b42;
+    --sidebar-primary: #1a1a1c;
+    --sidebar-primary-foreground: #fafafe;
+    --sidebar-accent: #f4f4f5;
+    --sidebar-accent-foreground: #1a1a1c;
+    --sidebar-border: #e0e2e7;
+    --sidebar-ring: #2b73e8;
+  }
+  .dark {
+    --background: #212121;
+    --foreground: #fafafe;
+    --card: #0a0a0a;
+    --card-foreground: #fafafe;
+    --popover: #0a0a0a;
+    --popover-foreground: #fafafe;
+    --primary: #fafafe;
+    --primary-foreground: #171717;
+    --secondary: #262626;
+    --secondary-foreground: #fafafe;
+    --muted: #262626;
+    --muted-foreground: #a3a3a3;
+    --accent: #262626;
+    --accent-foreground: #fafafe;
+    --destructive: #6e1c1c;
+    --destructive-foreground: #fafafe;
+    --border: #262626;
+    --input: #262626;
+    --ring: #d4d4d4;
+    --chart-1: #6a8cff;
+    --chart-2: #1a9988;
+    --chart-3: #ff8c42;
+    --chart-4: #c266ff;
+    --chart-5: #e64c8a;
+    --sidebar-background: #1a1a1c;
+    --sidebar-foreground: #f4f4f5;
+    --sidebar-primary: #3366cc;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #29292e;
+    --sidebar-accent-foreground: #f4f4f5;
+    --sidebar-border: #29292e;
+    --sidebar-ring: #2b73e8;
+  }
+}
+
+/* Custom Utility Classes */
+.bg-background {
+  background-color: var(--background);
+}
+.text-foreground {
+  color: var(--foreground);
+}
+.border-border {
+  border-color: var(--border);
+}
+.bg-card {
+  background-color: var(--card);
+}
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+
