@@ -163,13 +163,21 @@ export const Home = ({ user, onNavigate }) => {
         {dashboardCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <Card key={index} style={{ width: 300 }}>
+            <Card
+              key={index}
+              style={{ width: 300 }}
+              className="bg-card border-border"
+            >
               <div className="flex items-center gap-4">
                 <Icon className={`w-8 h-8 ${card.color}`} />
                 <div>
-                  <h3 className="text-lg font-semibold">{card.title}</h3>
-                  <p className="text-2xl font-bold">{card.value}</p>
-                  <p className="text-gray-500">{card.description}</p>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {card.title}
+                  </h3>
+                  <p className="text-2xl font-bold text-foreground">
+                    {card.value}
+                  </p>
+                  <p className="text-muted-foreground">{card.description}</p>
                 </div>
               </div>
             </Card>
@@ -178,12 +186,15 @@ export const Home = ({ user, onNavigate }) => {
       </div>
       <Divider className="my-6" />
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
-              <Card key={index} className=" hover:shadow-md transition-shadow">
+              <Card
+                key={index}
+                className="bg-card hover:shadow-md transition-shadow border-border"
+              >
                 <div className="flex items-center gap-3">
                   <div
                     className={`p-2 rounded-lg ${
@@ -195,14 +206,20 @@ export const Home = ({ user, onNavigate }) => {
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold"> {action.title}</h3>
-                    <p className="text-gray-500">{action.description}</p>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {" "}
+                      {action.title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {action.description}
+                    </p>
                   </div>
                 </div>
                 <Button
                   onClick={action.action}
-                  variant={action.primary ? "default" : "outline"}
-                  className="w-full my-1"
+                  className={`w-full my-1 ${
+                    action.primary ? "btn-primary" : "btn-outline"
+                  }`}
                 >
                   {action.primary ? "Get Started" : "View"}
                 </Button>
@@ -213,8 +230,10 @@ export const Home = ({ user, onNavigate }) => {
       </div>
       <Divider className="my-6" />
       <div>
-        <h3 className="text-lg font-semibold">Recent Activity</h3>
-        <Card className="w-full">
+        <h3 className="text-lg font-semibold text-foreground">
+          Recent Activity
+        </h3>
+        <Card className="w-full bg-card border-border">
           <div className="space-y-4">
             {recentActivityData.map((item, index) => (
               <div
@@ -222,8 +241,8 @@ export const Home = ({ user, onNavigate }) => {
                 className="flex items-center justify-between py-2 mb-1 border-gray-200 border-b"
               >
                 <div>
-                  <p className="font-medium">{item.patient}</p>
-                  <p className="text-sm text-gray-500">{item.type}</p>
+                  <p className="font-medium text-foreground">{item.patient}</p>
+                  <p className="text-sm text-muted-foreground">{item.type}</p>
                 </div>
                 <div className="text-right">
                   <span

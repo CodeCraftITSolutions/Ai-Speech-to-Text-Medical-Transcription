@@ -9,25 +9,36 @@
     --card-foreground: #0a0a0a;
     --popover: #ffffff;
     --popover-foreground: #0a0a0a;
+
     --primary: #171717;
     --primary-foreground: #fafafe;
+    --primary-hover: #2d2d2d;
+
     --secondary: #f5f5f5;
     --secondary-foreground: #171717;
+    --secondary-hover: #eaeaea;
+
+    --destructive: #df1f1f;
+    --destructive-foreground: #df1f1f;
+    --destructive-hover: #c21a1a;
+
     --muted: #f5f5f5;
     --muted-foreground: #737373;
     --accent: #f5f5f5;
     --accent-foreground: #171717;
-    --destructive: #df1f1f;
-    --destructive-foreground: #fafafe;
+
     --border: #e5e5e5;
     --input: #e5e5e5;
     --ring: #0a0a0a;
+
     --chart-1: #d25d2b;
     --chart-2: #2b9470;
     --chart-3: #27627c;
     --chart-4: #e3c437;
     --chart-5: #e4942d;
+
     --radius: 0.5rem;
+
     --sidebar-background: #f7f7f7;
     --sidebar-foreground: #3a3b42;
     --sidebar-primary: #1a1a1c;
@@ -37,6 +48,7 @@
     --sidebar-border: #e0e2e7;
     --sidebar-ring: #2b73e8;
   }
+
   .dark {
     --background: #212121;
     --foreground: #fafafe;
@@ -44,24 +56,34 @@
     --card-foreground: #fafafe;
     --popover: #0a0a0a;
     --popover-foreground: #fafafe;
+
     --primary: #fafafe;
     --primary-foreground: #171717;
+    --primary-hover: #f0f0f0;
+
     --secondary: #262626;
     --secondary-foreground: #fafafe;
+    --secondary-hover: #333333;
+
+    --destructive: #6e1c1c;
+    --destructive-foreground: #df1f1f;
+    --destructive-hover: #872020;
+
     --muted: #262626;
     --muted-foreground: #a3a3a3;
     --accent: #262626;
     --accent-foreground: #fafafe;
-    --destructive: #6e1c1c;
-    --destructive-foreground: #fafafe;
+
     --border: #262626;
     --input: #262626;
     --ring: #d4d4d4;
+
     --chart-1: #6a8cff;
     --chart-2: #1a9988;
     --chart-3: #ff8c42;
     --chart-4: #c266ff;
     --chart-5: #e64c8a;
+
     --sidebar-background: #1a1a1c;
     --sidebar-foreground: #f4f4f5;
     --sidebar-primary: #3366cc;
@@ -89,5 +111,75 @@
 .text-muted-foreground {
   color: var(--muted-foreground);
 }
+
+/* Ant Design Button Overrides */
+.ant-btn {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* === PRIMARY BUTTON === */
+.ant-btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* DARK MODE for primary */
+.dark .ant-btn-primary:hover,
+.dark .ant-btn-primary:focus {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+
+/* === SECONDARY BUTTON === */
+.ant-btn-default {
+  background-color: var(--secondary);
+  border-color: var(--border);
+  color: var(--secondary-foreground);
+}
+
+.ant-btn-default:hover,
+.ant-btn-default:focus {
+  background-color: var(--secondary-hover);
+  border-color: var(--border);
+}
+
+/* DARK MODE for secondary */
+.dark .ant-btn-default:hover,
+.dark .ant-btn-default:focus {
+  background-color: var(--secondary-hover);
+  border-color: var(--border);
+}
+
+
+/* === DANGER BUTTON === */
+.ant-btn-dangerous {
+  background-color: var(--destructive);
+  border-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.ant-btn-dangerous:hover,
+.ant-btn-dangerous:focus {
+  background-color: var(--destructive-hover);
+  border-color: var(--destructive-hover);
+}
+
+/* DARK MODE for danger */
+.dark .ant-btn-dangerous:hover,
+.dark .ant-btn-dangerous:focus {
+  background-color: var(--destructive-hover);
+  border-color: var(--destructive-hover);
+}
+
+
+
 
 

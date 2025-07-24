@@ -65,7 +65,7 @@ export const Header = ({ onLogout, user }) => {
   ];
 
   return (
-    <header className="bg-background border-b border-gray-200 px-6 py-4">
+    <header className="bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {/* <Button

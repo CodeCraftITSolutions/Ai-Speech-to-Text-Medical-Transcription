@@ -9,6 +9,7 @@ export default {
     "border-border",
     "bg-card",
     "text-muted-foreground",
+    
   ],
 
   theme: {
@@ -55,3 +56,5 @@ export default {
   },
   plugins: [],
 };
+
+

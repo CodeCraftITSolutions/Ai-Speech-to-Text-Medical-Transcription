@@ -1,4 +1,12 @@
-import { Badge, Button, Input, Select, Switch, Card } from "antd";
+import {
+  Badge,
+  Button,
+  Input,
+  Select,
+  Switch,
+  Card,
+  ConfigProvider,
+} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import {
   Download,
@@ -13,14 +21,9 @@ import {
   Play,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 const { Option } = Select;
-
-const Label = ({ children, htmlFor }) => (
-  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
-    {children}
-  </label>
-);
 
 export const NewTranscription = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -34,6 +37,8 @@ export const NewTranscription = () => {
   const [sendToTranscriptionist, setSendToTranscriptionist] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
+
+  const { theme } = useTheme();
 
   const intervalRef = useRef();
   const textareaRef = useRef(null);
@@ -146,8 +151,12 @@ export const NewTranscription = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">New Transcription</h1>
-          <p className="text-gray-600">Create a new medical transcription</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            New Transcription
+          </h1>
+          <p className="text-muted-foreground">
+            Create a new medical transcription
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -169,72 +178,154 @@ export const NewTranscription = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
+        <div className="flex flex-col gap-4">
           <Card
+            className="bg-card border-border"
             title={
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5" /> <h3>Patient Information</h3>
+              <div className="flex items-center gap-2 bg-card border-border">
+                <User className="w-5 h-5 text-foreground" />{" "}
+                <h3 className=" text-foreground">Patient Information</h3>
               </div>
             }
           >
             <div className="space-y-2 mb-4">
-              <Label htmlFor="patientName">Patient Name</Label>
-              <Input
-                id="patientName"
-                placeholder="Enter patient name"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="patientId">Patient ID</Label>
-              <Input
-                id="patientId"
-                placeholder="Enter patient ID"
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="specialty">Doctor Specialty</Label>
-              <Select
-                value={specialty}
-                onChange={(value) => setSpecialty(value)}
-                placeholder="Select specialty"
-                style={{ width: "100%" }}
+              <p
+                className="text-muted-foreground font-medium"
+                htmlFor="patientName"
               >
-                <Option value="cardiology">Cardiology</Option>
-                <Option value="neurology">Neurology</Option>
-                <Option value="orthopedics">Orthopedics</Option>
-                <Option value="internal-medicine">Internal Medicine</Option>
-                <Option value="pediatrics">Pediatrics</Option>
-                <Option value="surgery">Surgery</Option>
-              </Select>
+                Patient Name
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    colorTextPlaceholder:
+                      theme === "dark" ? "#888888" : "#bfbfbf",
+                    activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                  },
+                }}
+              >
+                <Input
+                  id="patientName"
+                  placeholder="Enter patient name"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                />
+              </ConfigProvider>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <p
+                className="text-muted-foreground font-medium"
+                htmlFor="patientId"
+              >
+                Patient ID
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    colorTextPlaceholder:
+                      theme === "dark" ? "#888888" : "#bfbfbf",
+                    activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                  },
+                }}
+              >
+                <Input
+                  id="patientId"
+                  placeholder="Enter patient ID"
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
+                />
+              </ConfigProvider>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <p
+                className="text-muted-foreground font-medium"
+                htmlFor="dateOfBirth"
+              >
+                Date of Birth
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    colorTextPlaceholder:
+                      theme === "dark" ? "#888888" : "#bfbfbf",
+                    activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                  },
+                }}
+              >
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                />
+              </ConfigProvider>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <p
+                className="text-muted-foreground font-medium"
+                htmlFor="specialty"
+              >
+                Doctor Specialty
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+
+                    optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
+                    selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    optionSelectedColor:
+                      theme === "dark" ? "#0a0a0a" : "#ffffff",
+                    optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
+                    colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                  },
+                }}
+              >
+                <Select
+                  value={specialty}
+                  onChange={(value) => setSpecialty(value)}
+                  placeholder="Select specialty"
+                  style={{ width: "100%" }}
+                >
+                  <Option value="cardiology">Cardiology</Option>
+                  <Option value="neurology">Neurology</Option>
+                  <Option value="orthopedics">Orthopedics</Option>
+                  <Option value="internal-medicine">Internal Medicine</Option>
+                  <Option value="pediatrics">Pediatrics</Option>
+                  <Option value="surgery">Surgery</Option>
+                </Select>
+              </ConfigProvider>
             </div>
           </Card>
 
           <Card
+            className="bg-card border-border"
             title={
               <div className="flex items-center gap-2">
-                <Mic className="w-5 h-5" /> <h3>Recording Controls</h3>
+                <Mic className="w-5 h-5 text-foreground" />{" "}
+                <h3 className="text-foreground">Recording Controls</h3>
               </div>
             }
           >
             <div className="text-center">
-              <div className="text-2xl font-mono font-bold">
+              <div className="text-2xl font-mono font-bold text-foreground">
                 {formatTime(recordingTime)}
               </div>
               <div className="flex items-center justify-center gap-2 mt-2">
@@ -252,8 +343,8 @@ export const NewTranscription = () => {
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Volume2 className="w-4 h-4" />
-                <span className="text-sm">Mic Level</span>
+                <Volume2 className="w-4 h-4 text-foreground" />
+                <span className="text-sm text-foreground">Mic Level</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -280,7 +371,7 @@ export const NewTranscription = () => {
                   <Button
                     onClick={stopRecording}
                     danger
-                    icon={<Square />}
+                    icon={<Square className="text-[#ff7875]" />}
                     block
                   >
                     Stop
@@ -290,35 +381,63 @@ export const NewTranscription = () => {
             </div>
           </Card>
 
-          <Card title="Options">
+          <Card
+            title={<h3 className="text-foreground">Options</h3>}
+            className="bg-card border-border"
+          >
             <div className="flex items-center justify-between pb-2">
-              <Label htmlFor="autoScroll">Auto-scroll transcript</Label>
-              <Switch
-                id="autoScroll"
-                checked={autoScroll}
-                onChange={setAutoScroll}
-              />
+              <p className="font-medium text-foreground" htmlFor="autoScroll">
+                Auto-scroll transcript
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorTextQuaternary:
+                      theme === "dark" ? "#212121" : "#d9d9d9",
+                  },
+                }}
+              >
+                <Switch
+                  id="autoScroll"
+                  checked={autoScroll}
+                  onChange={setAutoScroll}
+                />
+              </ConfigProvider>
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="sendToTranscriptionist">
+              <p
+                className="font-medium text-foreground"
+                htmlFor="sendToTranscriptionist"
+              >
                 Send to transcriptionist
-              </Label>
-              <Switch
-                id="sendToTranscriptionist"
-                checked={sendToTranscriptionist}
-                onChange={setSendToTranscriptionist}
-              />
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorTextQuaternary:
+                      theme === "dark" ? "#212121" : "#d9d9d9",
+                  },
+                }}
+              >
+                <Switch
+                  id="sendToTranscriptionist"
+                  checked={sendToTranscriptionist}
+                  onChange={setSendToTranscriptionist}
+                />
+              </ConfigProvider>
             </div>
           </Card>
         </div>
 
         <div className="lg:col-span-2">
           <Card
+            className="bg-card border-border"
             title={
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" /> <h3>Live Transcript</h3>
+                  <FileText className="w-5 h-5 text-foreground" />{" "}
+                  <h3 className="text-foreground">Live Transcript</h3>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -343,28 +462,42 @@ export const NewTranscription = () => {
               <div className="flex gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-2 bg-blue-500 rounded"></div>
-                  <span>Medical Terms</span>
+                  <span className="text-foreground">Medical Terms</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-2 bg-green-500 rounded"></div>
-                  <span>Drug Names</span>
+                  <span className="text-foreground">Drug Names</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-2 bg-red-500 rounded"></div>
-                  <span>Potential Errors</span>
+                  <span className="text-foreground">Potential Errors</span>
                 </div>
               </div>
 
-              <TextArea
-                ref={textareaRef}
-                rows={8}
-                placeholder="Transcription will appear here as you speak..."
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                className="min-h-[400px] font-mono text-sm leading-relaxed"
-              />
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    colorTextPlaceholder:
+                      theme === "dark" ? "#888888" : "#bfbfbf",
+                    activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                  },
+                }}
+              >
+                <TextArea
+                  ref={textareaRef}
+                  rows={8}
+                  placeholder="Transcription will appear here as you speak..."
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  className="min-h-[400px] font-mono text-sm leading-relaxed text-background text-foreground bg-card border-border "
+                />
+              </ConfigProvider>
 
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Words:{" "}
                 {transcript.split(" ").filter((word) => word.length > 0).length}
               </div>

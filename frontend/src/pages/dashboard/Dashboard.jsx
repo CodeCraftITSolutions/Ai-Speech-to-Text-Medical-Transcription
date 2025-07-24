@@ -38,7 +38,7 @@ export const Dashboard = ({ onLogout }) => {
     }
   };
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       <Sidebar
         user={user}
         currentPage={currentPage}

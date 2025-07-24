@@ -58,12 +58,12 @@ export const Sidebar = ({
 
   return (
     <div
-      className={`bg-background border-r border-gray-200 transition-all duration-300 flex flex-col ${
+      className={`bg-background border-r border-border transition-all duration-300 flex flex-col ${
         isOpen ? "w-48" : "w-16"
       }`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-border">
         <div className="flex flex-col items-center justify-center gap-2">
           <div className={`flex items-center gap-3`}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -128,7 +128,7 @@ export const Sidebar = ({
       </nav>
 
       {/* User Info */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-border">
         {isOpen ? (
           <div className="space-y-2">
             <div className="text-sm font-medium text-foreground truncate">
