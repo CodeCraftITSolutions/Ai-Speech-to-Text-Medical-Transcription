@@ -1,12 +1,14 @@
-import { Badge, Button, Card, Input, Table } from "antd";
+import { Badge, Button, Card, Input, Table, ConfigProvider } from "antd";
 import { CheckCircle, Clock, FileText, MessageSquare } from "lucide-react";
 import React, { useState } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 const { TextArea } = Input;
 
 export const Review = () => {
   const [selectedTranscription, setSelectedTranscription] = useState(null);
   const [reviewComment, setReviewComment] = useState("");
+  const { theme } = useTheme();
 
   const pendingReviews = [
     {
@@ -122,8 +124,8 @@ export const Review = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Review Queue</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground">Review Queue</h1>
+          <p className="text-muted-foreground">
             Review and approve pending transcriptions
           </p>
         </div>
@@ -131,118 +133,210 @@ export const Review = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card
-          title="Pending Reviews"
-          extra={<Clock className="h-4 w-4 text-orange-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className=" text-foreground">Pending Reviews</h3>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">{pendingReviews.length}</div>
-          <p className="text-xs text-gray-500">Awaiting review</p>
+          <div className="text-2xl font-bold text-foreground">
+            {pendingReviews.length}
+          </div>
+          <p className="text-xs text-muted-foreground">Awaiting review</p>
         </Card>
 
         <Card
-          title="High Priority"
-          extra={<Clock className="h-4 w-4 text-red-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className="text-foreground">High Priority</h3>
+              <Clock className="h-4 w-4 text-red-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold text-foreground">
             {pendingReviews.filter((r) => r.priority === "High").length}
           </div>
-          <p className="text-xs text-gray-500">Urgent reviews</p>
+          <p className="text-xs text-muted-foreground">Urgent reviews</p>
         </Card>
 
         <Card
-          title="Completed Today"
-          extra={<CheckCircle className="h-4 w-4 text-green-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className=" text-foreground">Completed Today</h3>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">15</div>
-          <p className="text-xs text-gray-500">Reviews completed</p>
+          <div className="text-2xl font-bold text-foreground">15</div>
+          <p className="text-xs text-muted-foreground">Reviews completed</p>
         </Card>
 
         <Card
-          title="Average Time"
-          extra={<Clock className="h-4 w-4 text-blue-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className=" text-foreground">Average Time</h3>
+              <Clock className="h-4 w-4 text-blue-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">12m</div>
-          <p className="text-xs text-gray-500">Per review</p>
+          <div className="text-2xl font-bold text-foreground">12m</div>
+          <p className="text-xs text-muted-foreground">Per review</p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card
-          title="Pending Reviews"
-          extra={`${pendingReviews.length} transcriptions awaiting review`}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className=" text-foreground">Pending Reviews</h3>
+              <p className="text-muted-foreground text-sm">{`${pendingReviews.length} transcriptions awaiting review`}</p>
+            </div>
+          }
         >
-          <Table
-            columns={columns}
-            dataSource={pendingReviews}
-            rowKey="id"
-            pagination={false}
-          />
+          <ConfigProvider
+            theme={{
+              token: {
+                colorBgContainer: theme === "dark" ? "#212121" : "#ffffff",
+                colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
+                selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
+                optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
+                colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
+              },
+            }}
+          >
+            <Table
+              columns={columns}
+              dataSource={pendingReviews}
+              rowKey="id"
+              pagination={false}
+            />
+          </ConfigProvider>
         </Card>
 
         <Card
-          title="Review Editor"
-          extra={
-            selectedTranscription
-              ? `Reviewing: ${selectedTranscription.patientName}`
-              : "Select a transcription to review"
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className=" text-foreground">Review Editor</h3>
+              <p className="text-muted-foreground text-sm">
+                {selectedTranscription
+                  ? `Reviewing: ${selectedTranscription.patientName}`
+                  : "Select a transcription to review"}
+              </p>
+            </div>
           }
         >
           {selectedTranscription ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-background rounded-lg">
                 <div>
-                  <div className="text-sm font-medium text-gray-500">
+                  <div className="text-sm font-medium text-foreground">
                     Patient
                   </div>
-                  <div>{selectedTranscription.patientName}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-muted-foreground">
+                    {selectedTranscription.patientName}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
                     {selectedTranscription.patientId}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500">
+                  <div className="text-sm font-medium text-foreground">
                     Doctor
                   </div>
-                  <div>{selectedTranscription.doctor}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-muted-foreground">
+                    {selectedTranscription.doctor}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
                     {selectedTranscription.specialty}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500">Date</div>
-                  <div>
+                  <div className="text-sm font-medium text-foreground">
+                    Date
+                  </div>
+                  <div className="text-muted-foreground">
                     {new Date(selectedTranscription.date).toLocaleDateString()}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-500">
+                  <div className="text-sm font-medium text-foreground">
                     Duration
                   </div>
-                  <div>{selectedTranscription.duration}</div>
+                  <div className="text-muted-foreground">
+                    {selectedTranscription.duration}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Transcript</label>
-                <TextArea
-                  rows={8}
-                  value={selectedTranscription.transcript}
-                  onChange={(e) =>
-                    setSelectedTranscription({
-                      ...selectedTranscription,
-                      transcript: e.target.value,
-                    })
-                  }
-                />
+                <label className="text-sm font-medium text-foreground">
+                  Transcript
+                </label>
+                <ConfigProvider
+                  theme={{
+                    token: {
+                      colorBgContainer:
+                        theme === "dark" ? "#1f1f1f" : "#ffffff",
+                      colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                      colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                      colorTextPlaceholder:
+                        theme === "dark" ? "#888888" : "#bfbfbf",
+                      activeBorderColor:
+                        theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                      hoverBorderColor:
+                        theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    },
+                  }}
+                >
+                  <TextArea
+                    rows={8}
+                    value={selectedTranscription.transcript}
+                    onChange={(e) =>
+                      setSelectedTranscription({
+                        ...selectedTranscription,
+                        transcript: e.target.value,
+                      })
+                    }
+                  />
+                </ConfigProvider>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Review Comments</label>
-                <TextArea
-                  rows={4}
-                  placeholder="Add comments or notes for the doctor..."
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                />
+                <label className="text-sm font-medium text-foreground">
+                  Review Comments
+                </label>
+                <ConfigProvider
+                  theme={{
+                    token: {
+                      colorBgContainer:
+                        theme === "dark" ? "#1f1f1f" : "#ffffff",
+                      colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                      colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                      colorTextPlaceholder:
+                        theme === "dark" ? "#888888" : "#bfbfbf",
+                      activeBorderColor:
+                        theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                      hoverBorderColor:
+                        theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    },
+                  }}
+                >
+                  <TextArea
+                    rows={4}
+                    placeholder="Add comments or notes for the doctor..."
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                  />
+                </ConfigProvider>
               </div>
 
               <div className="flex gap-2">
@@ -265,8 +359,10 @@ export const Review = () => {
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">
-              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>Select a transcription from the queue to begin reviewing</p>
+              <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Select a transcription from the queue to begin reviewing
+              </p>
             </div>
           )}
         </Card>
