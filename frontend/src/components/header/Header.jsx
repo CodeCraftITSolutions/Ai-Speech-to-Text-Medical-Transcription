@@ -1,4 +1,4 @@
-import { Button, Dropdown, Switch } from "antd";
+import { Button, ConfigProvider, Dropdown, Switch } from "antd";
 import { User, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -92,20 +92,34 @@ export const Header = ({ onLogout, user }) => {
             </p>
           </div>
         </div>
-        <Dropdown
-          menu={{ items: menuItems }}
-          placement="bottomRight"
-          trigger={["click"]}
+        <ConfigProvider
+          theme={{
+            token: {
+              colorBgContainer: theme === "dark" ? "#212121" : "#ffffff",
+              colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+              optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
+              selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
+              optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
+              optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
+              colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
+            },
+          }}
         >
-          <Button type="text" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-            <span className="hidden md:inline text-foreground">
-              {user.name}
-            </span>
-          </Button>
-        </Dropdown>
+          <Dropdown
+            menu={{ items: menuItems }}
+            placement="bottomRight"
+            trigger={["click"]}
+          >
+            <Button type="text" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <span className="hidden md:inline text-foreground">
+                {user.name}
+              </span>
+            </Button>
+          </Dropdown>
+        </ConfigProvider>
       </div>
     </header>
   );

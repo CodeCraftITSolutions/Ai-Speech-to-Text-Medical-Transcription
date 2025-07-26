@@ -14,7 +14,7 @@ export const Dashboard = ({ onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const user = {
     name: "Rifab Ahamed",
-    role: "doctor", // doctor | transcriptionist | admin
+    role: "admin", // doctor | transcriptionist | admin
     specialty: "Cardiology", // Optional, only for doctors
   };
 

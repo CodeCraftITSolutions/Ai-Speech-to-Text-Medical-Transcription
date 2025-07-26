@@ -2,6 +2,7 @@ import {
   Badge,
   Button,
   Card,
+  ConfigProvider,
   Dropdown,
   Input,
   Menu,
@@ -25,12 +26,14 @@ import {
   Users,
 } from "lucide-react";
 import React, { useState } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 const { Option } = Select;
 
 export const Admin = () => {
   const [showAddUser, setShowAddUser] = useState(false);
-
+  
+const { theme } = useTheme();
   const users = [
     {
       id: "1",
@@ -312,23 +315,43 @@ export const Admin = () => {
       children: (
         <Card title="System Logs">
           <div className="space-y-2 font-mono text-sm">
-            <div className="p-2 bg-green-50 rounded">
+            <div
+              className={`p-2 rounded ${
+                theme === "dark" ? "bg-green-800" : "bg-green-50"
+              }`}
+            >
               <span className="text-green-600">[INFO]</span> 2024-01-15 10:30:15
               - User login: sarah.johnson@hospital.com
             </div>
-            <div className="p-2 bg-blue-50 rounded">
+            <div
+              className={`p-2 rounded ${
+                theme === "dark" ? "bg-blue-800" : "bg-blue-50"
+              }`}
+            >
               <span className="text-blue-600">[INFO]</span> 2024-01-15 10:28:42
               - Transcription completed: T001
             </div>
-            <div className="p-2 bg-yellow-50 rounded">
+            <div
+              className={`p-2 rounded ${
+                theme === "dark" ? "bg-yellow-800" : "bg-yellow-50"
+              }`}
+            >
               <span className="text-yellow-600">[WARN]</span> 2024-01-15
               10:25:33 - High CPU usage detected: 85%
             </div>
-            <div className="p-2 bg-green-50 rounded">
+            <div
+              className={`p-2 rounded ${
+                theme === "dark" ? "bg-green-800" : "bg-green-50"
+              }`}
+            >
               <span className="text-green-600">[INFO]</span> 2024-01-15 10:22:18
               - Database backup completed
             </div>
-            <div className="p-2 bg-red-50 rounded">
+            <div
+              className={`p-2 rounded ${
+                theme === "dark" ? "bg-red-800" : "bg-red-50"
+              }`}
+            >
               <span className="text-red-600">[ERROR]</span> 2024-01-15 10:15:07
               - ASR service timeout for user ID: 3
             </div>
@@ -342,8 +365,10 @@ export const Admin = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground">
             Manage users, system settings, and analytics
           </p>
         </div>
@@ -351,52 +376,106 @@ export const Admin = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card
-          title="Total Users"
-          extra={<Users className="h-4 w-4 text-blue-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between">
+              <h3 className="text-foreground">Total Users</h3>
+              <Users className="h-4 w-4 text-blue-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">{users.length}</div>
-          <p className="text-xs text-gray-500">Active accounts</p>
+          <div className="text-2xl font-bold text-foreground">
+            {users.length}
+          </div>
+          <p className="text-xs text-muted-foreground">Active accounts</p>
         </Card>
         <Card
-          title="Transcriptions"
-          extra={<Mic className="h-4 w-4 text-green-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between">
+              <h3 className="text-foreground">Transcriptions</h3>
+              <Mic className="h-4 w-4 text-green-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold text-foreground">
             {analytics.totalTranscriptions}
           </div>
-          <p className="text-xs text-gray-500">This month</p>
+          <p className="text-xs text-muted-foreground">This month</p>
         </Card>
         <Card
-          title="Growth"
-          extra={<TrendingUp className="h-4 w-4 text-orange-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between">
+              <h3 className="text-foreground">Growth</h3>
+              <TrendingUp className="h-4 w-4 text-orange-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">+{analytics.monthlyGrowth}%</div>
-          <p className="text-xs text-gray-500">vs last month</p>
+          <div className="text-2xl font-bold text-foreground">
+            +{analytics.monthlyGrowth}%
+          </div>
+          <p className="text-xs text-muted-foreground">vs last month</p>
         </Card>
         <Card
-          title="Accuracy"
-          extra={<BarChart3 className="h-4 w-4 text-purple-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between">
+              <h3 className="text-foreground">Accuracy</h3>
+              <BarChart3 className="h-4 w-4 text-purple-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">{analytics.averageAccuracy}%</div>
-          <p className="text-xs text-gray-500">Average accuracy</p>
+          <div className="text-2xl font-bold text-foreground">
+            {analytics.averageAccuracy}%
+          </div>
+          <p className="text-xs text-muted-foreground">Average accuracy</p>
         </Card>
         <Card
-          title="Uptime"
-          extra={<Activity className="h-4 w-4 text-green-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between">
+              <h3 className="text-foreground">Uptime</h3>
+              <Activity className="h-4 w-4 text-green-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">{analytics.systemUptime}%</div>
-          <p className="text-xs text-gray-500">System uptime</p>
+          <div className="text-2xl font-bold text-foreground">
+            {analytics.systemUptime}%
+          </div>
+          <p className="text-xs text-muted-foreground">System uptime</p>
         </Card>
         <Card
-          title="Storage"
-          extra={<Database className="h-4 w-4 text-red-600" />}
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between">
+              <h3 className="text-foreground">Storage</h3>
+              <Database className="h-4 w-4 text-red-600" />
+            </div>
+          }
         >
-          <div className="text-2xl font-bold">{analytics.storageUsed}%</div>
-          <p className="text-xs text-gray-500">Storage used</p>
+          <div className="text-2xl font-bold text-foreground">
+            {analytics.storageUsed}%
+          </div>
+          <p className="text-xs text-muted-foreground">Storage used</p>
         </Card>
       </div>
-
-      <Tabs items={tabItems} />
+      <ConfigProvider
+        theme={{
+          token: {
+            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+            colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+            colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+            colorTextPlaceholder: theme === "dark" ? "#888888" : "#bfbfbf",
+            activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+            hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+            itemColor: "rgb(250,219,20)",
+            itemHoverColor: "rgb(114,46,209)",
+          },
+        }}
+      >
+        <Tabs items={tabItems} />
+      </ConfigProvider>
     </div>
   );
 };
