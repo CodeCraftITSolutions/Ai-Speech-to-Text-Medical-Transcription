@@ -59,11 +59,11 @@ export const Sidebar = ({
   return (
     <div
       className={`bg-background border-r border-border transition-all duration-300 flex flex-col ${
-        isOpen ? "w-48" : "w-16"
+        isOpen ? "w-48" : "w-14"
       }`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-border">
+      <div className="p-2 md:p-4 border-b border-border">
         <div className="flex flex-col items-center justify-center gap-2">
           <div className={`flex items-center gap-3`}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -93,7 +93,7 @@ export const Sidebar = ({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 flex flex-col items-center">
+      <nav className="flex-1 p-2 sm:p-4 flex flex-col items-center">
         <ul className="space-y-2 flex flex-col items-start">
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;

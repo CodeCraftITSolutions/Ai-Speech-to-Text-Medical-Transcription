@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {Home} from '../home/Home.jsx';
 import { useState } from 'react';
 import { Header } from '../../components/header/Header';
@@ -14,9 +14,26 @@ export const Dashboard = ({ onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const user = {
     name: "Rifab Ahamed",
-    role: "admin", // doctor | transcriptionist | admin
+    role: "doctor", // doctor | transcriptionist | admin
     specialty: "Cardiology", // Optional, only for doctors
   };
+
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
 
   const renderPage = () => {
@@ -34,7 +51,7 @@ export const Dashboard = ({ onLogout }) => {
       case "settings":
         return <Settings user={user} />;
       default:
-        return <HomePage user={user} onNavigate={setCurrentPage} />;
+        return <Home user={user} onNavigate={setCurrentPage} />;
     }
   };
   return (
@@ -52,7 +69,7 @@ export const Dashboard = ({ onLogout }) => {
           onLogout={onLogout}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
-        <main className="flex-1 overflow-auto p-6">{renderPage()}</main>
+        <main className="flex-1 overflow-auto p-1 sm:p-6">{renderPage()}</main>
       </div>
     </div>
   );

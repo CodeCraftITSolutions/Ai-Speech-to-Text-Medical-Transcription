@@ -159,22 +159,21 @@ export const Home = ({ user, onNavigate }) => {
   const quickActions = getQuickActions();
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dashboardCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <Card
               key={index}
-              style={{ width: 300 }}
-              className="bg-card border-border"
+              className="bg-card border-border md:w-72 lg:w-auto"
             >
               <div className="flex items-center gap-4">
-                <Icon className={`w-8 h-8 ${card.color}`} />
+                <Icon className={`w-6 sm:w-8 h-6 sm:h-8 ${card.color}`} />
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">
+                  <h3 className="text-base md:text-lg font-semibold text-foreground">
                     {card.title}
                   </h3>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-lg md:text-2xl font-bold text-foreground">
                     {card.value}
                   </p>
                   <p className="text-muted-foreground">{card.description}</p>
@@ -203,14 +202,13 @@ export const Home = ({ user, onNavigate }) => {
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-3 sm:w-5 h-3 sm:h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {" "}
+                    <h3 className="text-base md:text-lg font-semibold text-foreground">
                       {action.title}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground text-sm md:text-base">
                       {action.description}
                     </p>
                   </div>
