@@ -69,7 +69,7 @@ export const Dashboard = ({ onLogout }) => {
           onLogout={onLogout}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
-        <main className="flex-1 overflow-auto p-1 sm:p-6">{renderPage()}</main>
+        <main className="flex-1 overflow-auto p-2 sm:p-6">{renderPage()}</main>
       </div>
     </div>
   );
