@@ -21,7 +21,6 @@ import React, { useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import PhoneInput from "react-phone-input-2";
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
-import {  } from "../../context/ThemeContext";
 
 const { Option } = Select;
 
@@ -336,7 +335,7 @@ export const Settings = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Settings</h1>
           <p className="text-muted-foreground">
