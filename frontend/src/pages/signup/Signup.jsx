@@ -1,46 +1,43 @@
 import React, { useState } from "react";
-import { Card, Input, Button, Select } from "antd";
-import {
-  Mail,
-  Lock,
-  Stethoscope,
-  UserCheck,
-  Shield,
-} from "lucide-react";
+import { Card, Input, Button, Select, message } from "antd";
+import { Mail, Lock, Stethoscope, UserCheck, Shield } from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const { Option } = Select;
 
-const SignupForm = ({ onSignup }) => {
+const SignupForm = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      setLoading(false);
-      return;
+      return message.error("Passwords do not match");
     }
 
-    setTimeout(() => {
-      const newUser = {
-        id: Date.now().toString(),
+    setLoading(true);
+    try {
+      await axios.post("http://localhost:8000/api/register", {
         name,
         email,
+        password,
         role,
-        specialty: role === "doctor" ? "General Medicine" : undefined,
-      };
+      });
 
-      localStorage.setItem("user", JSON.stringify(newUser));
-      onSignup(newUser);
+      message.success("Signup successful! Please log in.");
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      message.error("Signup failed: " + (err?.response?.data?.detail || "Unknown error"));
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -59,12 +56,7 @@ const SignupForm = ({ onSignup }) => {
       >
         <form onSubmit={handleSignup} className="space-y-4">
           <div className="space-y-1">
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Full Name
-            </label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
             <Input
               id="name"
               prefix={<UserCheck size={16} />}
@@ -76,12 +68,7 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
             <Input
               id="email"
               type="email"
@@ -94,12 +81,7 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
             <Input.Password
               id="password"
               prefix={<Lock size={16} />}
@@ -111,12 +93,7 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Confirm Password
-            </label>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
             <Input.Password
               id="confirmPassword"
               prefix={<Lock size={16} />}
@@ -128,17 +105,13 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Role
-            </label>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
             <Select
               placeholder="Select your role"
               value={role || undefined}
               onChange={(value) => setRole(value)}
               className="w-full"
+              required
             >
               <Option value="doctor">
                 <div className="flex items-center gap-2">
@@ -161,12 +134,7 @@ const SignupForm = ({ onSignup }) => {
             </Select>
           </div>
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            className="w-full"
-            loading={loading}
-          >
+          <Button type="primary" htmlType="submit" className="w-full" loading={loading}>
             Sign Up
           </Button>
         </form>

@@ -1,37 +1,46 @@
 import React, { useState } from "react";
-import { Card, Input, Button, Select, Spin } from "antd";
+import { Card, Input, Button, Select, message } from "antd";
 import { Stethoscope, Shield, UserCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const { Option } = Select;
-const LoginForm = (onLogin) => {
+
+const LoginForm = () => {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const user = {
-        id: "1",
-        name:
-          role === "doctor"
-            ? "Dr. Sarah Johnson"
-            : role === "transcriptionist"
-            ? "Alice Smith"
-            : "Admin User",
+    try {
+      const res = await axios.post("http://localhost:8000/api/login", {
         email,
-        role,
-        specialty: role === "doctor" ? "Cardiology" : undefined,
-      };
+        password,
+      });
 
-      localStorage.setItem("user", JSON.stringify(user));
-      onLogin(user);
+      const token = res.data.access_token;
+      localStorage.setItem("token", token);
+
+      message.success("Login successful!");
+
+      // Navigate based on role (can customize later)
+      if (role === "doctor") navigate("/dashboard");
+      else if (role === "transcriptionist") navigate("/transcriptions");
+      else if (role === "admin") navigate("/admin");
+      else navigate("/");
+
+    } catch (error) {
+      console.error(error);
+      message.error("Login failed. Check your credentials.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -52,10 +61,7 @@ const LoginForm = (onLogin) => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <Input
@@ -69,10 +75,7 @@ const LoginForm = (onLogin) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <Input.Password
@@ -85,10 +88,7 @@ const LoginForm = (onLogin) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
               Role
             </label>
             <Select
@@ -96,6 +96,7 @@ const LoginForm = (onLogin) => {
               value={role || undefined}
               onChange={(value) => setRole(value)}
               className="w-full"
+              required
             >
               <Option value="doctor">
                 <div className="flex items-center gap-2">
@@ -127,14 +128,9 @@ const LoginForm = (onLogin) => {
             Sign In
           </Button>
         </form>
-
-        {/* <div className="mt-4 text-center text-sm text-gray-600">
-          <p>Demo Credentials:</p>
-          <p>Email: demo@medtranscribe.com</p>
-          <p>Password: demo123</p>
-        </div> */}
       </Card>
     </div>
   );
-}
+};
+
 export default LoginForm;

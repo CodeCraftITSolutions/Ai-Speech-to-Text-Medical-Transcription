@@ -1,14 +1,29 @@
 import { Button, ConfigProvider, Dropdown, Switch } from "antd";
 import { User, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import { useNavigate } from "react-router-dom";
+
+
 
 export const Header = ({ onLogout, user }) => {
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  // const handleLogout = () => {
+  //   localStorage.removeItem("user");
+  //   onLogout();
+  // };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    onLogout();
-  };
+  
+
+const handleLogout = () => {
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
+  if (onLogout) onLogout();
+  navigate("/login");
+};
+
+
+
 
   const menuItems = [
     {

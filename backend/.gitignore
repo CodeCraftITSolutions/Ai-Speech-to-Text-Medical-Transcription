@@ -1,0 +1,38 @@
+# 🐍 Python-related
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+
+# 🚫 Virtual Environment
+venv/
+env/
+.venv/
+packages/
+
+# 🔒 Environment variables
+.env
+.env.*
+
+# 📦 Dependency lock files
+poetry.lock
+Pipfile.lock
+
+# ⚙️ IDEs and editors
+.vscode/
+.idea/
+
+# 💾 OS-specific
+.DS_Store
+Thumbs.db
+
+# 📄 Log and database files
+*.log
+*.sqlite3
+instance/
+
+# FastAPI/Starlette static folders (if any)
+static/
+media/
+uploads/

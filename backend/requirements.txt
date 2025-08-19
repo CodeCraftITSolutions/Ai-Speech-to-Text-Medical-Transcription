@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+scipy
+numpy
+librosa
+openai-whisper
+torch
+transformers
+spacy
+scispacy
