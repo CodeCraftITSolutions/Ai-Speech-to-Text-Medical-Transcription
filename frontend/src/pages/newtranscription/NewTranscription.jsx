@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
+import exportToPdf from "../../utils/exportToPdf.jsx";
+import exportToWord from "../../utils/exportToWord.jsx";
 
 const { Option } = Select;
 
@@ -137,14 +139,6 @@ export const NewTranscription = () => {
     } else {
       alert("Transcription finalized!");
     }
-  };
-
-  const exportToPDF = () => {
-    alert("Exporting to PDF...");
-  };
-
-  const exportToWord = () => {
-    alert("Exporting to Word...");
   };
 
   return (
@@ -441,14 +435,28 @@ export const NewTranscription = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 pt-2">
                   <Button
-                    onClick={exportToPDF}
+                    onClick={() =>
+                      exportToPdf({
+                        patientName,
+                        patientId,
+                        dateOfBirth,
+                        specialty,
+                        transcript,
+                      })
+                    }
                     icon={<Download />}
                     className="text-xs"
                   >
                     PDF
                   </Button>
                   <Button
-                    onClick={exportToWord}
+                    onClick={()=>exportToWord({
+                      patientName,
+                      patientId,
+                      dateOfBirth,
+                      specialty,
+                      transcript,
+                    })}
                     icon={<Download />}
                     className="text-xs"
                   >
