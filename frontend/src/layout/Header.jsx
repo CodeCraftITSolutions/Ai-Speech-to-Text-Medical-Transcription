@@ -1,6 +1,6 @@
 import { Button, ConfigProvider, Dropdown, Switch } from "antd";
 import { User, Settings, LogOut, Moon, Sun } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 export const Header = ({ onLogout, user }) => {
   const { theme, toggleTheme } = useTheme();

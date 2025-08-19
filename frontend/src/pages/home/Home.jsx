@@ -10,8 +10,13 @@ import {
   UserCheck,
 } from "lucide-react";
 import React from "react";
+import { useUser } from "../../context/UserContext";
+import { useNavigate } from "react-router";
 
-export const Home = ({ user, onNavigate }) => {
+export const Home = () => {
+  const navigate = useNavigate();
+  const { user } = useUser();
+
   const getDashboardCards = () => {
     switch (user.role) {
       case "doctor":
@@ -99,14 +104,14 @@ export const Home = ({ user, onNavigate }) => {
             title: "Start New Transcription",
             description: "Begin a new patient recording",
             icon: Mic,
-            action: () => onNavigate("new-transcription"),
+            action: () => navigate("new-transcription"),
             primary: true,
           },
           {
             title: "View History",
             description: "Browse past transcriptions",
             icon: History,
-            action: () => onNavigate("history"),
+            action: () => navigate("/dashboard/history"),
             primary: false,
           },
         ];
@@ -116,14 +121,14 @@ export const Home = ({ user, onNavigate }) => {
             title: "Review Queue",
             description: "Review pending transcriptions",
             icon: UserCheck,
-            action: () => onNavigate("review"),
+            action: () => navigate("/dashboard/review"),
             primary: true,
           },
           {
             title: "View History",
             description: "Browse completed work",
             icon: History,
-            action: () => onNavigate("history"),
+            action: () => navigate("/dashboard/history"),
             primary: false,
           },
         ];
@@ -133,14 +138,14 @@ export const Home = ({ user, onNavigate }) => {
             title: "Admin Panel",
             description: "Manage users and system",
             icon: Shield,
-            action: () => onNavigate("admin"),
+            action: () => navigate("/dashboard/admin"),
             primary: true,
           },
           {
             title: "View Analytics",
             description: "System usage reports",
             icon: BarChart3,
-            action: () => onNavigate("history"),
+            action: () => navigate("/dashboard/history"),
             primary: false,
           },
         ];

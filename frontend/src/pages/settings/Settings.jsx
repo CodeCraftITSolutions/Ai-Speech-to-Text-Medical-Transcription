@@ -21,12 +21,14 @@ import React, { useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import PhoneInput from "react-phone-input-2";
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
+import { useUser } from "../../context/UserContext";
 
 const { Option } = Select;
 
 
 
-export const Settings = ({ user }) => {
+export const Settings = () => {
+  const { user } = useUser();
   // const [showPassword, setShowPassword] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState({

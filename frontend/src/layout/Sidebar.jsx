@@ -9,45 +9,59 @@ import {
   UserCheck,
   History,
 } from "lucide-react";
+import { useUser } from "../context/UserContext.jsx";
+import { NavLink } from "react-router-dom";
 // import { useState } from "react";
 
 export const Sidebar = ({
-  user,
-  currentPage,
-  onNavigate,
+  // currentPage,
+  // onNavigate,
   isOpen,
   onToggle,
 }) => {
+  // const location = useLocation();
+  const { user } = useUser();
   const menuItems = [
     {
       id: "home",
       label: "Home",
       icon: Home,
+      path: "/dashboard",
       roles: ["doctor", "transcriptionist", "admin"],
     },
     {
       id: "new-transcription",
       label: "New Transcription",
       icon: Mic,
+      path: "/dashboard/new-transcription",
       roles: ["doctor"],
     },
     {
       id: "history",
       label: "History",
       icon: History,
+      path: "/dashboard/history",
       roles: ["doctor", "transcriptionist", "admin"],
     },
     {
       id: "review",
       label: "Review Queue",
       icon: UserCheck,
+      path: "/dashboard/review",
       roles: ["transcriptionist", "doctor"],
     },
-    { id: "admin", label: "Admin Panel", icon: Shield, roles: ["admin"] },
+    {
+      id: "admin",
+      label: "Admin Panel",
+      icon: Shield,
+      path: "/dashboard/admin",
+      roles: ["admin"],
+    },
     {
       id: "settings",
       label: "Settings",
       icon: Settings,
+      path: "/dashboard/settings",
       roles: ["doctor", "transcriptionist", "admin"],
     },
   ];
@@ -97,30 +111,26 @@ export const Sidebar = ({
         <ul className="space-y-2 flex flex-col items-start">
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPage === item.id;
-
             return (
               <li key={item.id}>
-                <Button
-                  type="text"
-                  className={`
-                    ${
+                <NavLink
+                  to={item.path}
+                  end
+                  className={({ isActive }) =>
+                    `${
                       isOpen
-                        ? "w-44 !justify-start gap-3 h-10 "
-                        : "justify-center px-2 w-full"
-                    }
-                    ${
+                        ? "w-44 justify-start gap-1 h-8 pl-2 text-md"
+                        : "justify-center px-2 w-full h-8"
+                    } flex items-center rounded transition-colors ${
                       isActive
-                        ? "!bg-blue-600 text-foreground !hover:bg-blue-700"
-                        : "hover:bg-accent text-muted-foreground"
-                    }
-                    
-                  `}
-                  onClick={() => onNavigate(item.id)}
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "text-muted-foreground hover:bg-accent"
+                    }`
+                  }
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
-                  {isOpen && <span>{item.label}</span>}
-                </Button>
+                  {isOpen && <span className="ml-2">{item.label}</span>}
+                </NavLink>
               </li>
             );
           })}
@@ -143,8 +153,7 @@ export const Sidebar = ({
           <div className="flex justify-center">
             <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
               <span className="text-xs font-medium text-foreground">
-                {user.name.charAt(0)}
-                Rifab
+                {user.name.charAt(0).toUpperCase()}
               </span>
             </div>
           </div>

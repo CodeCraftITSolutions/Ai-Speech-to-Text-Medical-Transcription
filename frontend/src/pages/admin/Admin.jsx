@@ -25,7 +25,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import React, { useState } from "react";
+import React from "react";
 import { useTheme } from "../../context/ThemeContext";
 
 const { Option } = Select;
