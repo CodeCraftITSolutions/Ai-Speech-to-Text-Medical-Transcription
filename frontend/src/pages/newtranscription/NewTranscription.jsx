@@ -45,7 +45,7 @@ export const NewTranscription = () => {
   const [uploading, setUploading] = useState(false);
 
   const { theme } = useTheme();
-  const { token } = useUser();
+  const { callWithAuth, isAuthenticated } = useUser();
 
   const intervalRef = useRef();
   const textareaRef = useRef(null);
@@ -148,7 +148,7 @@ export const NewTranscription = () => {
   };
 
   const finalizeTranscription = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       message.error("You must be logged in to submit audio");
       return;
     }
@@ -160,10 +160,10 @@ export const NewTranscription = () => {
 
     setUploading(true);
     try {
-      const uploadResponse = await uploadTranscription(token, audioFile);
+      const uploadResponse = await callWithAuth(uploadTranscription, audioFile);
       message.success(uploadResponse?.detail ?? "Audio uploaded successfully");
 
-      await createJob(token, {
+      await callWithAuth(createJob, {
         type: "transcription",
         input_uri: uploadResponse?.filename ?? audioFile.name,
       });
