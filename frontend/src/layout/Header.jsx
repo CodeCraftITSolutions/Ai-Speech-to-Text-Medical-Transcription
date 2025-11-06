@@ -7,7 +7,7 @@ export const Header = ({ onLogout, user }) => {
 
   const handleLogout = async () => {
     try {
-      onLogout?.();
+      await onLogout?.();
     } catch (error) {
       message.error(error?.message ?? "Unable to logout");
     }
