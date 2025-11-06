@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Card, Input, Button, Select } from "antd";
+import { Link } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -169,6 +170,15 @@ const SignupForm = ({ onSignup }) => {
           >
             Sign Up
           </Button>
+          <p className="text-center text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Log In
+            </Link>
+          </p>
         </form>
       </Card>
     </div>

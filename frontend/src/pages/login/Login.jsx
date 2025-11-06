@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Card, Input, Button, Select, Spin } from "antd";
+import { Card, Input, Button, Select } from "antd";
+import { Link } from "react-router-dom";
 import { Stethoscope, Shield, UserCheck } from "lucide-react";
 
 const { Option } = Select;
-const LoginForm = (onLogin) => {
+const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
@@ -29,7 +30,7 @@ const LoginForm = (onLogin) => {
       };
 
       localStorage.setItem("user", JSON.stringify(user));
-      onLogin(user);
+      onLogin?.(user);
       setLoading(false);
     }, 1000);
   };
@@ -126,6 +127,23 @@ const LoginForm = (onLogin) => {
           >
             Sign In
           </Button>
+          <div className="flex flex-col items-center gap-2 text-sm text-gray-600">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Forgot my password? Reset password
+            </Link>
+            <p>
+              Don&apos;t have an account?{" "}
+              <Link
+                to="/signup"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
         </form>
 
         {/* <div className="mt-4 text-center text-sm text-gray-600">
