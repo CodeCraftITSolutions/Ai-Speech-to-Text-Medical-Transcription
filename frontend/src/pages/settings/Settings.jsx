@@ -18,10 +18,9 @@ import {
   Save,
   User as UserIcon,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { useTheme } from "../../context/ThemeContext";
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
 import { useUser } from "../../context/UserContext.jsx";
+import { useTheme } from "../../context/ThemeContext";
 import { updateCurrentUser } from "../../api/client";
 
 const { Option } = Select;
@@ -40,87 +39,24 @@ const ProfileCard = React.memo(function ProfileCard({
 }) {
   const username = user?.username ?? "";
 
-export const Settings = () => {
-  const { user, callWithAuth, refreshUser } = useUser();
-  const { theme, toggleTheme } = useTheme();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    transcriptionComplete: true,
-    reviewRequired: true,
-    systemUpdates: false,
-  });
+  return (
+    <Card title="Profile Information" extra={<UserIcon className="w-5 h-5" />}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+        <Input
+          placeholder="First Name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+        />
+        <Input
+          placeholder="Last Name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+        />
+      </div>
 
-  useEffect(() => {
-    if (!user) {
-      setFirstName("");
-      setLastName("");
-      setPhoneNumber("");
-      return;
-    }
-
-    setFirstName(user.firstName ?? "");
-    setLastName(user.lastName ?? "");
-    setPhoneNumber(user.phoneNumber ?? "");
-  }, [user]);
-
-  const saveSettings = async () => {
-    if (!user) {
-      message.error("You need to be signed in to update your settings.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      const normalizedPhone = phoneNumber?.replace(/\s+/g, "");
-
-      await callWithAuth(updateCurrentUser, {
-        first_name: firstName?.trim() || null,
-        last_name: lastName?.trim() || null,
-        phone_number: normalizedPhone ? normalizedPhone : null,
-      });
-      await refreshUser();
-      message.success("Settings saved successfully!");
-    } catch (error) {
-      message.error(error?.message || "Failed to save settings");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePhoneChange = (fullNumber) => {
-    setPhoneNumber(fullNumber);
-  };
-
-  const ProfileCard = () => {
-    const username = user?.username ?? "";
-
-    return (
-      <Card title="Profile Information" extra={<User className="w-5 h-5" />}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-          <Input
-            placeholder="First Name"
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
-          />
-          <Input
-            placeholder="Last Name"
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
-          />
-        </div>
-        <div className="mb-2">
-          <Input
-            className="mb-2"
-            placeholder="Username"
-            value={username}
-            disabled
-          />
-        </div>
+      <div className="mb-2">
+        <Input className="mb-2" placeholder="Username" value={username} disabled />
+      </div>
 
       <div className="mb-2">
         {user?.role === "doctor" && (
@@ -138,10 +74,10 @@ export const Settings = () => {
         )}
       </div>
 
-        <PhoneNumberInput value={phoneNumber} onChange={handlePhoneChange} />
-      </Card>
-    );
-  };
+      <PhoneNumberInput value={phoneNumber} onChange={handlePhoneChange} />
+    </Card>
+  );
+});
 
 const SecurityCard = React.memo(function SecurityCard() {
   return (
@@ -453,50 +389,11 @@ export const Settings = () => {
         </Button>
       </div>
 
-      <ConfigProvider
-        theme={{
-          token: {
-            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
-            colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
-            colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-            colorTextPlaceholder: theme === "dark" ? "#888888" : "#bfbfbf",
-            activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-            hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-
-            itemColor: "rgb(250,219,20)",
-            itemHoverColor: "rgb(114,46,209)",
-          },
-        }}
-      >
+      <ConfigProvider theme={{ token: rootThemeTokens }}>
         <Tabs
           defaultActiveKey="profile"
-          items={[
-            {
-              key: "profile",
-              label: "Profile",
-              children: <ProfileCard />,
-            },
-            {
-              key: "security",
-              label: "Security",
-              children: <SecurityCard />,
-            },
-            {
-              key: "audio",
-              label: "Audio",
-              children: <AudioCard />,
-            },
-            {
-              key: "preferences",
-              label: "Preferences",
-              children: <PreferencesCard />,
-            },
-            {
-              key: "notifications",
-              label: "Notifications",
-              children: <NotificationsCard />,
-            },
-          ]}
+          destroyInactiveTabPane={false}
+          items={tabItems}
         />
       </ConfigProvider>
     </div>
