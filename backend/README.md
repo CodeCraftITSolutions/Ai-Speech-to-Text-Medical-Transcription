@@ -12,6 +12,22 @@ This backend provides authentication, job orchestration, report generation, and 
 - Docker Compose stack for local development
 - Pytest suite covering auth, jobs, and reports flows
 
+## Prerequisites
+
+- Python 3.11
+- [Poetry](https://python-poetry.org/docs/#installation) package manager. Install it with `pipx install poetry` or `pip install --user poetry` and then add Poetry to your `PATH` (restart your terminal afterwards).
+
+If you prefer managing Python tools per-project, create a virtual environment first:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install --upgrade pip
+pip install poetry
+```
+
+Verify the installation with `poetry --version` before continuing.
+
 ## Getting Started
 
 1. Copy `.env.example` to `.env` and adjust secrets as needed.
@@ -32,6 +48,12 @@ docker-compose up --build
 ```
 
 The API will be available at `http://localhost:8000`. Interactive docs live at `/docs`.
+
+### Troubleshooting
+
+- **`poetry` is not recognized**: Ensure Poetry is installed and available on your `PATH` (`pipx install poetry` or `pip install --user poetry`). On Windows PowerShell you may need to restart the terminal so the updated `PATH` is picked up.
+
+Once Poetry resolves correctly, re-run the commands from the getting started section.
 
 ## Testing
 
