@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ConfigProvider, Input, Select } from "antd";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -62,13 +62,63 @@ const PhoneNumberInput = ({
   disabled = false,
   countryOptions = defaultCountryOptions,
 }) => {
+  const { theme } = useTheme();
   const [selectedCode, setSelectedCode] = useState(countryCode);
-  const [number, setNumber] = useState(value);
+  const [number, setNumber] = useState("");
+
+  const availableCodes = useMemo(
+    () => new Set(countryOptions.map((option) => option.value)),
+    [countryOptions]
+  );
+  const fallbackCode = useMemo(() => {
+    if (availableCodes.has(countryCode)) {
+      return countryCode;
+    }
+    const firstOption = countryOptions[0]?.value;
+    if (firstOption) {
+      return firstOption;
+    }
+    return "+1";
+  }, [availableCodes, countryCode, countryOptions]);
+
+  useEffect(() => {
+    if (!value) {
+      setNumber("");
+      setSelectedCode((prevCode) =>
+        availableCodes.has(prevCode) ? prevCode : fallbackCode
+      );
+      return;
+    }
+
+    let matchingCode = null;
+    for (const code of availableCodes) {
+      if (value.startsWith(code)) {
+        if (!matchingCode || code.length > matchingCode.length) {
+          matchingCode = code;
+        }
+      }
+    }
+
+    if (matchingCode) {
+      setSelectedCode(matchingCode);
+      setNumber(value.slice(matchingCode.length));
+      return;
+    }
+
+    setSelectedCode((prevCode) =>
+      availableCodes.has(prevCode) ? prevCode : fallbackCode
+    );
+    setNumber(value.startsWith("+") ? value.slice(1) : value);
+  }, [value, availableCodes, countryCode, fallbackCode]);
 
   const handlePhoneChange = (e) => {
     const updatedNumber = e.target.value;
     setNumber(updatedNumber);
     if (onChange) {
+      if (!updatedNumber.trim()) {
+        onChange("");
+        return;
+      }
       onChange(`${selectedCode}${updatedNumber}`);
     }
   };
@@ -76,12 +126,13 @@ const PhoneNumberInput = ({
   const handleCodeChange = (code) => {
     setSelectedCode(code);
     if (onChange) {
+      if (!number.trim()) {
+        onChange("");
+        return;
+      }
       onChange(`${code}${number}`);
     }
   };
-
-    const { theme } = useTheme();
-  
 
   return (
     <Input
