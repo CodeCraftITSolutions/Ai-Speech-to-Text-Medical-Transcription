@@ -7,22 +7,22 @@ import { listJobs } from "../../api/client";
 export const History = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { token } = useUser();
+  const { callWithAuth, isAuthenticated } = useUser();
 
   const fetchJobs = useCallback(async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       return;
     }
     setLoading(true);
     try {
-      const response = await listJobs(token);
+      const response = await callWithAuth(listJobs);
       setJobs(Array.isArray(response) ? response : []);
     } catch (error) {
       message.error(error?.message ?? "Unable to load jobs");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [callWithAuth, isAuthenticated]);
 
   useEffect(() => {
     fetchJobs();

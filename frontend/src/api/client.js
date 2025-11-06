@@ -26,7 +26,9 @@ const handleResponse = async (response) => {
     } catch (error) {
       // ignore JSON parse errors
     }
-    throw new Error(message || "Request failed");
+    const error = new Error(message || "Request failed");
+    error.status = response.status;
+    throw error;
   }
 
   if (response.status === 204) {
@@ -41,17 +43,26 @@ const handleResponse = async (response) => {
 };
 
 export const login = async (username, password) => {
-  const body = new URLSearchParams();
-  body.append("username", username);
-  body.append("password", password);
-
-  const response = await fetch(`${API_BASE_URL}/v1/auth/token`, {
+  const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body,
+    credentials: "include",
+    body: JSON.stringify({ username, password }),
+  });
+
+  return handleResponse(response);
+};
+
+export const refreshAccessToken = async () => {
+  const response = await fetch(`${API_BASE_URL}/v1/auth/refresh`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
   });
 
   return handleResponse(response);
@@ -61,6 +72,7 @@ export const register = async ({ username, password, role }) => {
   const response = await fetch(`${API_BASE_URL}/v1/auth/register`, {
     method: "POST",
     headers: buildHeaders(null, { "Content-Type": "application/json" }),
+    credentials: "include",
     body: JSON.stringify({ username, password, role }),
   });
 
@@ -71,6 +83,7 @@ export const getCurrentUser = async (token) => {
   const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
     method: "GET",
     headers: buildHeaders(token),
+    credentials: "include",
   });
 
   return handleResponse(response);
@@ -80,6 +93,7 @@ export const listJobs = async (token) => {
   const response = await fetch(`${API_BASE_URL}/v1/jobs`, {
     method: "GET",
     headers: buildHeaders(token),
+    credentials: "include",
   });
 
   return handleResponse(response);
@@ -89,6 +103,7 @@ export const createJob = async (token, payload) => {
   const response = await fetch(`${API_BASE_URL}/v1/jobs`, {
     method: "POST",
     headers: buildHeaders(token, { "Content-Type": "application/json" }),
+    credentials: "include",
     body: JSON.stringify(payload),
   });
 
@@ -102,7 +117,20 @@ export const uploadTranscription = async (token, file) => {
   const response = await fetch(`${API_BASE_URL}/v1/transcribe/upload`, {
     method: "POST",
     headers: buildHeaders(token),
+    credentials: "include",
     body: formData,
+  });
+
+  return handleResponse(response);
+};
+
+export const logout = async () => {
+  const response = await fetch(`${API_BASE_URL}/v1/auth/logout`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
   });
 
   return handleResponse(response);

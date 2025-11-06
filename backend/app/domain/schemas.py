@@ -10,9 +10,15 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 class TokenPayload(BaseModel):
     sub: int
     exp: int
+    type: str
 
 
 class UserBase(BaseModel):
