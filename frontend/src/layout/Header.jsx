@@ -1,14 +1,19 @@
-import { Button, ConfigProvider, Dropdown, Switch } from "antd";
+import { Button, ConfigProvider, Dropdown, Switch, message } from "antd";
 import { User, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.jsx";
 
 export const Header = ({ onLogout, user }) => {
   const { theme, toggleTheme } = useTheme();
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    onLogout();
+  const handleLogout = async () => {
+    try {
+      onLogout?.();
+    } catch (error) {
+      message.error(error?.message ?? "Unable to logout");
+    }
   };
+
+  const firstName = user?.name?.split(" ")[0] ?? user?.username ?? "there";
 
   const menuItems = [
     {
@@ -35,18 +40,10 @@ export const Header = ({ onLogout, user }) => {
       label: (
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2">
-            {theme === "dark" ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Sun className="w-4 h-4" />
-            )}
+            {theme === "dark" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             <span>Dark Mode</span>
           </div>
-          <Switch
-            size="small"
-            checked={theme === "dark"}
-            onChange={toggleTheme}
-          />
+          <Switch size="small" checked={theme === "dark"} onChange={toggleTheme} />
         </div>
       ),
     },
@@ -68,19 +65,9 @@ export const Header = ({ onLogout, user }) => {
     <header className="bg-background border-b border-border px-1 md:px-6 py-2 md:py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {/* <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleSidebar}
-            className="md:hidden"
-          >
-            <MenuIcon className="w-5 h-5" />
-          </Button> */}
-
           <div>
             <h1 className="xs:text-sm md:text-xl font-semibold text-foreground">
-              Welcome back,
-              {user.name.split(" ")[0]}
+              Welcome back, {firstName}
             </h1>
             <p className="text-sm text-muted-foreground">
               {new Date().toLocaleDateString("en-US", {
@@ -105,18 +92,12 @@ export const Header = ({ onLogout, user }) => {
             },
           }}
         >
-          <Dropdown
-            menu={{ items: menuItems }}
-            placement="bottomRight"
-            trigger={["click"]}
-          >
+          <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={["click"]}>
             <Button type="text" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="hidden md:inline text-foreground">
-                {user.name}
-              </span>
+              <span className="hidden md:inline text-foreground">{user?.name ?? user?.username ?? "User"}</span>
             </Button>
           </Dropdown>
         </ConfigProvider>

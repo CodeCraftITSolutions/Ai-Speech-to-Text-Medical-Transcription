@@ -10,15 +10,16 @@ import {
   UserCheck,
 } from "lucide-react";
 import React from "react";
-import { useUser } from "../../context/UserContext";
+import { useUser } from "../../context/UserContext.jsx";
 import { useNavigate } from "react-router";
 
 export const Home = () => {
   const navigate = useNavigate();
   const { user } = useUser();
+  const role = user?.role ?? "assistant";
 
   const getDashboardCards = () => {
-    switch (user.role) {
+    switch (role) {
       case "doctor":
         return [
           {
@@ -97,7 +98,7 @@ export const Home = () => {
   };
 
   const getQuickActions = () => {
-    switch (user.role) {
+    switch (role) {
       case "doctor":
         return [
           {

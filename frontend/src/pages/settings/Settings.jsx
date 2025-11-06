@@ -21,7 +21,7 @@ import React, { useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import PhoneInput from "react-phone-input-2";
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
-import { useUser } from "../../context/UserContext";
+import { useUser } from "../../context/UserContext.jsx";
 
 const { Option } = Select;
 
@@ -47,63 +47,56 @@ export const Settings = () => {
     console.log("Phone:", fullNumber);
   };
 
-  const ProfileCard = () => (
-    <Card
-      title="Profile Information"
-      extra={<User className="w-5 h-5" />}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-        <Input
-          placeholder="First Name"
-          defaultValue={user.name.split(" ")[0]}
-        />
-        <Input
-          placeholder="Last Name"
-          defaultValue={user.name.split(" ").slice(1).join(" ")}
-        />
-      </div>
-      <div className="mb-2">
-        <Input
-          className="mb-2"
-          placeholder="Email Address"
-          defaultValue={user.email}
-        />
-      </div>
+  const ProfileCard = () => {
+    const fullName = user?.name ?? user?.username ?? "";
+    const [firstName, ...rest] = fullName.split(" ");
+    const lastName = rest.join(" ");
 
-      <div className="mb-2">
-        {user.role === "doctor" && (
-          <ConfigProvider
-            theme={{
-              token: {
-                colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
-                colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+    return (
+      <Card title="Profile Information" extra={<User className="w-5 h-5" />}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+          <Input placeholder="First Name" defaultValue={firstName} />
+          <Input placeholder="Last Name" defaultValue={lastName} />
+        </div>
+        <div className="mb-2">
+          <Input
+            className="mb-2"
+            placeholder="Username"
+            defaultValue={user?.username}
+          />
+        </div>
 
-                optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
-                selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
-                optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
-                optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
-                colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
-              },
-            }}
-          >
-            <Select
-              defaultValue={user.specialty?.toLowerCase()}
-              className="mt-4 w-full"
+        <div className="mb-2">
+          {user?.role === "doctor" && (
+            <ConfigProvider
+              theme={{
+                token: {
+                  colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                  colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                  optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
+                  selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                  optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
+                  optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
+                  colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                },
+              }}
             >
-              <Option value="cardiology">Cardiology</Option>
-              <Option value="neurology">Neurology</Option>
-              <Option value="orthopedics">Orthopedics</Option>
-              <Option value="internal-medicine">Internal Medicine</Option>
-              <Option value="pediatrics">Pediatrics</Option>
-              <Option value="surgery">Surgery</Option>
-            </Select>
-          </ConfigProvider>
-        )}
-      </div>
+              <Select defaultValue={user?.specialty?.toLowerCase()} className="mt-4 w-full">
+                <Option value="cardiology">Cardiology</Option>
+                <Option value="neurology">Neurology</Option>
+                <Option value="orthopedics">Orthopedics</Option>
+                <Option value="internal-medicine">Internal Medicine</Option>
+                <Option value="pediatrics">Pediatrics</Option>
+                <Option value="surgery">Surgery</Option>
+              </Select>
+            </ConfigProvider>
+          )}
+        </div>
 
-      <PhoneNumberInput onChange={handlePhoneChange} />
-    </Card>
-  );
+        <PhoneNumberInput onChange={handlePhoneChange} />
+      </Card>
+    );
+  };
 
   const SecurityCard = () => (
     <Card title="Password & Security" extra={<Lock className="w-5 h-5" />}>
