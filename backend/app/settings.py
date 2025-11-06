@@ -19,8 +19,7 @@ class Settings(BaseSettings):
     STORAGE_KEY: str
     STORAGE_SECRET: str
 
-    FRONTEND_ORIGIN: str = "http://localhost:3000,http://localhost:5173"
-
+    FRONTEND_ORIGIN: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
     @property
     def frontend_origins(self) -> list[str]:
         """Return the configured list of frontend origins for CORS."""
