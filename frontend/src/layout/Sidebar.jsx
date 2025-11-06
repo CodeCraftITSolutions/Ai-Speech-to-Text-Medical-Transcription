@@ -11,23 +11,21 @@ import {
 } from "lucide-react";
 import { useUser } from "../context/UserContext.jsx";
 import { NavLink } from "react-router-dom";
-// import { useState } from "react";
 
-export const Sidebar = ({
-  // currentPage,
-  // onNavigate,
-  isOpen,
-  onToggle,
-}) => {
-  // const location = useLocation();
+export const Sidebar = ({ isOpen, onToggle }) => {
   const { user } = useUser();
+
+  if (!user) {
+    return null;
+  }
+
   const menuItems = [
     {
       id: "home",
       label: "Home",
       icon: Home,
       path: "/dashboard",
-      roles: ["doctor", "transcriptionist", "admin"],
+      roles: ["doctor", "transcriptionist", "admin", "assistant"],
     },
     {
       id: "new-transcription",
@@ -41,7 +39,7 @@ export const Sidebar = ({
       label: "History",
       icon: History,
       path: "/dashboard/history",
-      roles: ["doctor", "transcriptionist", "admin"],
+      roles: ["doctor", "transcriptionist", "admin", "assistant"],
     },
     {
       id: "review",
@@ -62,13 +60,11 @@ export const Sidebar = ({
       label: "Settings",
       icon: Settings,
       path: "/dashboard/settings",
-      roles: ["doctor", "transcriptionist", "admin"],
+      roles: ["doctor", "transcriptionist", "admin", "assistant"],
     },
   ];
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(user.role)
-  );
+  const filteredMenuItems = menuItems.filter((item) => item.roles.includes(user.role));
 
   return (
     <div
@@ -76,37 +72,26 @@ export const Sidebar = ({
         isOpen ? "w-48" : "w-14"
       }`}
     >
-      {/* Header */}
       <div className="p-2 md:p-4 border-b border-border">
         <div className="flex flex-col items-center justify-center gap-2">
           <div className={`flex items-center gap-3`}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Stethoscope className="w-5 h-5 text-white" />
             </div>
-            {isOpen && (
-              <span className="font-semibold text-foreground">
-                MedTranscribe
-              </span>
-            )}
+            {isOpen && <span className="font-semibold text-foreground">MedTranscribe</span>}
           </div>
           <div className=" w-full flex justify-end">
-            <div
-              // variant="ghost"
-              size="sm"
+            <Button
+              size="small"
+              type="text"
               onClick={onToggle}
-              className="cursor-pointer p-2 rounded-full bg-accent hover:bg-gray-200 transition-colors"
-            >
-              <ChevronLeft
-                className={`text-foreground w-4 h-4 transition-transform ${
-                  !isOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
+              className="p-0 text-foreground"
+              icon={<ChevronLeft className={`text-foreground w-4 h-4 ${!isOpen ? "rotate-180" : ""}`} />}
+            />
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 p-2 sm:p-4 flex flex-col items-center">
         <ul className="space-y-2 flex flex-col items-start">
           {filteredMenuItems.map((item) => {
@@ -137,23 +122,17 @@ export const Sidebar = ({
         </ul>
       </nav>
 
-      {/* User Info */}
       <div className="p-4 border-t border-border">
         {isOpen ? (
           <div className="space-y-2">
-            <div className="text-sm font-medium text-foreground truncate">
-              {user.name}
-            </div>
-            <div className="text-xs text-muted-foreground capitalize">
-              {user.role}
-              {user.specialty && ` • ${user.specialty}`}
-            </div>
+            <div className="text-sm font-medium text-foreground truncate">{user.name}</div>
+            <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
           </div>
         ) : (
           <div className="flex justify-center">
             <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
               <span className="text-xs font-medium text-foreground">
-                {user.name.charAt(0).toUpperCase()}
+                {(user.name || user.username || "U").charAt(0).toUpperCase()}
               </span>
             </div>
           </div>

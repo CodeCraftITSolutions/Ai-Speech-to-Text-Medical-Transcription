@@ -1,47 +1,45 @@
 import React, { useState } from "react";
-import { Card, Input, Button, Select } from "antd";
-import { Link } from "react-router-dom";
-import {
-  Mail,
-  Lock,
-  Stethoscope,
-  UserCheck,
-  Shield,
-} from "lucide-react";
+import { Card, Input, Button, Select, message } from "antd";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Mail, Lock, Stethoscope, UserCheck, Shield } from "lucide-react";
+import { useUser } from "../../context/UserContext.jsx";
 
 const { Option } = Select;
 
-const SignupForm = ({ onSignup }) => {
-  const [name, setName] = useState("");
+const SignupForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
+  const { register, isAuthenticated } = useUser();
+  const navigate = useNavigate();
 
-  const handleSignup = (e) => {
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const handleSignup = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      setLoading(false);
+      message.error("Passwords do not match");
+      return;
+    }
+    if (!role) {
+      message.error("Please select a role");
       return;
     }
 
-    setTimeout(() => {
-      const newUser = {
-        id: Date.now().toString(),
-        name,
-        email,
-        role,
-        specialty: role === "doctor" ? "General Medicine" : undefined,
-      };
-
-      localStorage.setItem("user", JSON.stringify(newUser));
-      onSignup(newUser);
+    setLoading(true);
+    try {
+      await register({ username: email, password, role });
+      message.success("Account created successfully");
+      navigate("/dashboard");
+    } catch (error) {
+      message.error(error?.message ?? "Unable to sign up");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -60,28 +58,8 @@ const SignupForm = ({ onSignup }) => {
       >
         <form onSubmit={handleSignup} className="space-y-4">
           <div className="space-y-1">
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Full Name
-            </label>
-            <Input
-              id="name"
-              prefix={<UserCheck size={16} />}
-              placeholder="Dr. Jane Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Username or Email
             </label>
             <Input
               id="email"
@@ -95,10 +73,7 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <Input.Password
@@ -112,10 +87,7 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirm Password
             </label>
             <Input.Password
@@ -129,10 +101,7 @@ const SignupForm = ({ onSignup }) => {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
               Role
             </label>
             <Select
@@ -143,39 +112,28 @@ const SignupForm = ({ onSignup }) => {
             >
               <Option value="doctor">
                 <div className="flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" />
-                  Doctor / Clinician
+                  <Stethoscope className="w-4 h-4" /> Doctor / Clinician
                 </div>
               </Option>
               <Option value="transcriptionist">
                 <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4" />
-                  Medical Transcriptionist
+                  <UserCheck className="w-4 h-4" /> Medical Transcriptionist
                 </div>
               </Option>
               <Option value="admin">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  Administrator
+                  <Shield className="w-4 h-4" /> Administrator
                 </div>
               </Option>
             </Select>
           </div>
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            className="w-full"
-            loading={loading}
-          >
+          <Button type="primary" htmlType="submit" className="w-full" loading={loading}>
             Sign Up
           </Button>
           <p className="text-center text-sm text-gray-600">
             Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
+            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
               Log In
             </Link>
           </p>

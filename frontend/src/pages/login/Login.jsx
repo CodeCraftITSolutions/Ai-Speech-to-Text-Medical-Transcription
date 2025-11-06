@@ -1,38 +1,32 @@
 import React, { useState } from "react";
-import { Card, Input, Button, Select } from "antd";
-import { Link } from "react-router-dom";
-import { Stethoscope, Shield, UserCheck } from "lucide-react";
+import { Card, Input, Button, message } from "antd";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Stethoscope } from "lucide-react";
+import { useUser } from "../../context/UserContext.jsx";
 
-const { Option } = Select;
-const LoginForm = ({ onLogin }) => {
-  const [email, setEmail] = useState("");
+const LoginForm = () => {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useUser();
 
-  const handleSubmit = (e) => {
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      const user = {
-        id: "1",
-        name:
-          role === "doctor"
-            ? "Dr. Sarah Johnson"
-            : role === "transcriptionist"
-            ? "Alice Smith"
-            : "Admin User",
-        email,
-        role,
-        specialty: role === "doctor" ? "Cardiology" : undefined,
-      };
-
-      localStorage.setItem("user", JSON.stringify(user));
-      onLogin?.(user);
-      setLoading(false);
-    }, 1000);
+    setSubmitting(true);
+    try {
+      await login(username, password);
+      message.success("Logged in successfully");
+      navigate("/dashboard");
+    } catch (error) {
+      message.error(error?.message ?? "Unable to login");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -44,36 +38,27 @@ const LoginForm = ({ onLogin }) => {
               <Stethoscope className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-xl font-bold">MedTranscribe</h2>
-            <p className="text-sm text-gray-500">
-              Secure Medical Transcription Platform
-            </p>
+            <p className="text-sm text-gray-500">Secure Medical Transcription Platform</p>
           </div>
         }
         className="w-full max-w-md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Username
             </label>
             <Input
-              id="email"
-              type="email"
+              id="username"
               placeholder="doctor@hospital.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <Input.Password
@@ -85,78 +70,26 @@ const LoginForm = ({ onLogin }) => {
             />
           </div>
 
-          <div className="space-y-1">
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Role
-            </label>
-            <Select
-              placeholder="Select your role"
-              value={role || undefined}
-              onChange={(value) => setRole(value)}
-              className="w-full"
-            >
-              <Option value="doctor">
-                <div className="flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" />
-                  Doctor / Clinician
-                </div>
-              </Option>
-              <Option value="transcriptionist">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4" />
-                  Medical Transcriptionist
-                </div>
-              </Option>
-              <Option value="admin">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  Administrator
-                </div>
-              </Option>
-            </Select>
-          </div>
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            className="w-full"
-            loading={loading}
-          >
+          <Button type="primary" htmlType="submit" className="w-full" loading={submitting}>
             Sign In
           </Button>
-         <div className="flex flex-col items-center gap-2 text-sm text-gray-600">
+          <div className="flex flex-col items-center gap-2 text-sm text-gray-600">
             <p>
               Forgot my password?{" "}
-              <Link
-                to="/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
+              <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
                 Reset password
               </Link>
             </p>
             <p>
               Don&apos;t have an account?{" "}
-              <Link
-                to="/signup"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
+              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
                 Sign up
               </Link>
             </p>
           </div>
-
         </form>
-
-        {/* <div className="mt-4 text-center text-sm text-gray-600">
-          <p>Demo Credentials:</p>
-          <p>Email: demo@medtranscribe.com</p>
-          <p>Password: demo123</p>
-        </div> */}
       </Card>
     </div>
   );
-}
+};
 export default LoginForm;
