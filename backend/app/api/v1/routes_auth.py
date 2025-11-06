@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.infra.db import get_db
@@ -77,10 +78,13 @@ def refresh(
     return schemas.Token(access_token=new_access_token)
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(response: Response) -> Response:
-    auth.clear_refresh_cookie(response)
-    return response
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(request: Request) -> JSONResponse:
+    resp = JSONResponse({"ok": True})
+    # If you set the cookie with a domain, compute the same domain here:
+    # e.g., domain = request.headers.get("host").split(":")[0]
+    auth.clear_refresh_cookie(resp)  # pass the domain you used when setting
+    return resp
 
 
 @router.get("/protected")

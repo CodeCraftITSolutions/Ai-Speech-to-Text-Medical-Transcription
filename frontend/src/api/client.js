@@ -24,6 +24,7 @@ const handleResponse = async (response) => {
         message = errorData.message;
       }
     } catch (error) {
+      console.log("Error parsing error response:", error);
       // ignore JSON parse errors
     }
     const error = new Error(message || "Request failed");

@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REFRESH_TOKEN_COOKIE_NAME: str = "refresh_token"
-    REFRESH_COOKIE_SECURE: bool = True
+    #change this to False in development if using HTTP
+    REFRESH_COOKIE_SECURE: bool = False
 
     DATABASE_URL: AnyUrl
     BROKER_URL: AnyUrl
@@ -52,6 +53,9 @@ class Settings(BaseSettings):
         super().model_post_init(__context)
         self.DATABASE_URL = str(self.DATABASE_URL)
         self.BROKER_URL = str(self.BROKER_URL)
+        if self.REFRESH_COOKIE_SECURE is None:
+            secure_envs = {"production", "prod", "staging"}
+            self.REFRESH_COOKIE_SECURE = self.ENV.lower() in secure_envs
 
 @lru_cache
 def get_settings() -> Settings:
