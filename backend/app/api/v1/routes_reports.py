@@ -25,7 +25,7 @@ def create_report(
 @router.get("/{report_id}")
 def get_report(
     report_id: int,
-    current_user: User = Depends(auth.get_current_user),
+    current_user: User = Depends(auth.require_roles(UserRole.DOCTOR, UserRole.ADMIN)),
     report_repo: repositories.ReportRepository = Depends(deps.get_report_repository),
 ):
     report = report_repo.get(report_id)
