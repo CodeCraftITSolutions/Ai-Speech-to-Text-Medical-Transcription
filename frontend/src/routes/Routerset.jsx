@@ -10,12 +10,14 @@ import { History } from '../pages/history/History.jsx';
 import { Review } from '../pages/review/Review.jsx';
 import { Admin } from '../pages/admin/Admin.jsx';
 import { Settings } from '../pages/settings/Settings.jsx';
+import ResetPassword from '../pages/resetPassword/ResetPassword.jsx';
 
 export const Routerset = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginForm />} />
       <Route path="/signup" element={<SignupForm />} />
+      <Route path="/forgot-password" element={<ResetPassword />} />
       <Route path="/" element={<LandingPage />} />
       {/* <Route path="/dashboard" element={<Dashboard />} /> */}
       <Route path="/dashboard" element={<DashboardLayout />}>
