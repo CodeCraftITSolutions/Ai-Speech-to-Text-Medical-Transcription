@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1])) 
+
+
 import asyncio
 from logging.config import fileConfig
 
@@ -7,6 +13,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.domain.models import Base
 from app.settings import get_settings
+
+import asyncio, sys
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
