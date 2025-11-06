@@ -11,6 +11,7 @@ import { History } from "../pages/history/History.jsx";
 import { Review } from "../pages/review/Review.jsx";
 import { Admin } from "../pages/admin/Admin.jsx";
 import { Settings } from "../pages/settings/Settings.jsx";
+import { Profile } from "../pages/profile/Profile.jsx";
 import ResetPassword from "../pages/resetPassword/ResetPassword.jsx";
 import { useUser } from "../context/UserContext.jsx";
 
@@ -51,6 +52,7 @@ export const Routerset = () => (
       <Route path="history" element={<History />} />
       <Route path="review" element={<Review />} />
       <Route path="admin" element={<Admin />} />
+      <Route path="profile" element={<Profile />} />
       <Route path="settings" element={<Settings />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,9 +1,11 @@
 import { Button, ConfigProvider, Dropdown, Switch, message } from "antd";
 import { User, Settings, LogOut, Moon, Sun } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext.jsx";
 
 export const Header = ({ onLogout, user }) => {
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -19,7 +21,7 @@ export const Header = ({ onLogout, user }) => {
     {
       key: "profile",
       label: (
-        <div className="flex items-center gap-2 ">
+        <div className="flex items-center gap-2">
           <User className="w-4 h-4 mr-2" />
           Profile
         </div>
@@ -38,12 +40,20 @@ export const Header = ({ onLogout, user }) => {
     {
       key: "theme",
       label: (
-        <div className="flex items-center justify-between gap-2 w-full">
+        <div
+          className="flex items-center justify-between gap-2 w-full"
+          onClick={(event) => event.stopPropagation()}
+        >
           <div className="flex items-center gap-2">
             {theme === "dark" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             <span>Dark Mode</span>
           </div>
-          <Switch size="small" checked={theme === "dark"} onChange={toggleTheme} />
+          <Switch
+            size="small"
+            checked={theme === "dark"}
+            onChange={toggleTheme}
+            onClick={(checked, event) => event.stopPropagation()}
+          />
         </div>
       ),
     },
@@ -53,13 +63,29 @@ export const Header = ({ onLogout, user }) => {
     {
       key: "logout",
       label: (
-        <div className="flex items-center gap-2" onClick={handleLogout}>
+        <div className="flex items-center gap-2">
           <LogOut className="w-4 h-4 mr-2" />
           Sign out
         </div>
       ),
     },
   ];
+
+  const handleMenuClick = ({ key }) => {
+    switch (key) {
+      case "profile":
+        navigate("/dashboard/profile");
+        break;
+      case "settings":
+        navigate("/dashboard/settings");
+        break;
+      case "logout":
+        handleLogout();
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <header className="bg-background border-b border-border px-1 md:px-6 py-2 md:py-4">
@@ -92,7 +118,11 @@ export const Header = ({ onLogout, user }) => {
             },
           }}
         >
-          <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={["click"]}>
+          <Dropdown
+            menu={{ items: menuItems, onClick: handleMenuClick }}
+            placement="bottomRight"
+            trigger={["click"]}
+          >
             <Button type="text" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
