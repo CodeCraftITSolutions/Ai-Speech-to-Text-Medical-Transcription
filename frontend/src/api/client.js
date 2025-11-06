@@ -90,6 +90,17 @@ export const getCurrentUser = async (token) => {
   return handleResponse(response);
 };
 
+export const updateCurrentUser = async (token, payload) => {
+  const response = await fetch(`${API_BASE_URL}/v1/users/me`, {
+    method: "PATCH",
+    headers: buildHeaders(token, { "Content-Type": "application/json" }),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(response);
+};
+
 export const listJobs = async (token) => {
   const response = await fetch(`${API_BASE_URL}/v1/jobs`, {
     method: "GET",

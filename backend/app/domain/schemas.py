@@ -24,10 +24,19 @@ class TokenPayload(BaseModel):
 class UserBase(BaseModel):
     username: str
     role: str = Field(default="assistant")
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
 
 
 class UserCreate(UserBase):
     password: str = Field(min_length=8)
+
+
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
 
 
 class UserRead(UserBase):

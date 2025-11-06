@@ -22,6 +22,13 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
+    def update(self, user: models.User, **data) -> models.User:
+        for field, value in data.items():
+            setattr(user, field, value)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
 
 class JobRepository:
     def __init__(self, db: Session):

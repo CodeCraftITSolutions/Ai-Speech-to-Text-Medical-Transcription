@@ -6,6 +6,7 @@ import {
   Select,
   Switch,
   Tabs,
+  message,
 } from "antd";
 import {
   Bell,
@@ -17,20 +18,23 @@ import {
   Save,
   User,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import PhoneInput from "react-phone-input-2";
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
 import { useUser } from "../../context/UserContext.jsx";
+import { updateCurrentUser } from "../../api/client";
 
 const { Option } = Select;
 
 
 
 export const Settings = () => {
-  const { user } = useUser();
-  // const [showPassword, setShowPassword] = useState(false);
+  const { user, callWithAuth, refreshUser } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [saving, setSaving] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -39,30 +43,70 @@ export const Settings = () => {
     systemUpdates: false,
   });
 
-  const saveSettings = () => {
-    alert("Settings saved successfully!");
+  useEffect(() => {
+    if (!user) {
+      setFirstName("");
+      setLastName("");
+      setPhoneNumber("");
+      return;
+    }
+
+    setFirstName(user.firstName ?? "");
+    setLastName(user.lastName ?? "");
+    setPhoneNumber(user.phoneNumber ?? "");
+  }, [user]);
+
+  const saveSettings = async () => {
+    if (!user) {
+      message.error("You need to be signed in to update your settings.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const normalizedPhone = phoneNumber?.replace(/\s+/g, "");
+
+      await callWithAuth(updateCurrentUser, {
+        first_name: firstName?.trim() || null,
+        last_name: lastName?.trim() || null,
+        phone_number: normalizedPhone ? normalizedPhone : null,
+      });
+      await refreshUser();
+      message.success("Settings saved successfully!");
+    } catch (error) {
+      message.error(error?.message || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePhoneChange = (fullNumber) => {
-    console.log("Phone:", fullNumber);
+    setPhoneNumber(fullNumber);
   };
 
   const ProfileCard = () => {
-    const fullName = user?.name ?? user?.username ?? "";
-    const [firstName, ...rest] = fullName.split(" ");
-    const lastName = rest.join(" ");
+    const username = user?.username ?? "";
 
     return (
       <Card title="Profile Information" extra={<User className="w-5 h-5" />}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-          <Input placeholder="First Name" defaultValue={firstName} />
-          <Input placeholder="Last Name" defaultValue={lastName} />
+          <Input
+            placeholder="First Name"
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+          />
+          <Input
+            placeholder="Last Name"
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+          />
         </div>
         <div className="mb-2">
           <Input
             className="mb-2"
             placeholder="Username"
-            defaultValue={user?.username}
+            value={username}
+            disabled
           />
         </div>
 
@@ -93,7 +137,7 @@ export const Settings = () => {
           )}
         </div>
 
-        <PhoneNumberInput onChange={handlePhoneChange} />
+        <PhoneNumberInput value={phoneNumber} onChange={handlePhoneChange} />
       </Card>
     );
   };
@@ -337,7 +381,12 @@ export const Settings = () => {
             Manage your account and application preferences
           </p>
         </div>
-        <Button onClick={saveSettings} icon={<Save className="w-4 h-4" />}>
+        <Button
+          onClick={saveSettings}
+          icon={<Save className="w-4 h-4" />}
+          loading={saving}
+          disabled={saving || !user}
+        >
           Save Changes
         </Button>
       </div>
@@ -357,9 +406,9 @@ export const Settings = () => {
           },
         }}
       >
-        <Tabs defaultActiveKey="profile"
-           items=
-          {[
+        <Tabs
+          defaultActiveKey="profile"
+          items={[
             {
               key: "profile",
               label: "Profile",
@@ -385,8 +434,8 @@ export const Settings = () => {
               label: "Notifications",
               children: <NotificationsCard />,
             },
-          ]}/>
-
+          ]}
+        />
       </ConfigProvider>
     </div>
   );
