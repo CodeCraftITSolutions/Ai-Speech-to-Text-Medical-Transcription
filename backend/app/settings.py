@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from pydantic import AnyUrl, Field
 from pydantic_settings import BaseSettings
@@ -24,11 +25,20 @@ class Settings(BaseSettings):
     @property
     def frontend_origins(self) -> list[str]:
         """Return the configured list of frontend origins for CORS."""
-        return [
-            origin.strip()
-            for origin in self.FRONTEND_ORIGIN.split(",")
-            if origin.strip()
-        ]
+        origins: set[str] = set()
+        for origin in self.FRONTEND_ORIGIN.split(","):
+            cleaned = origin.strip().rstrip("/")
+            if not cleaned:
+                continue
+            origins.add(cleaned)
+
+            # Include localhost variants for loopback development setups.
+            parsed = urlparse(cleaned)
+            if parsed.hostname == "localhost":
+                port = f":{parsed.port}" if parsed.port else ""
+                localhost_variant = f"{parsed.scheme}://127.0.0.1{port}"
+                origins.add(localhost_variant)
+        return sorted(origins)
 
     ASR_MODEL: str = "whisper-large"  # TODO: used by AI team
 
