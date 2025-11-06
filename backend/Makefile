@@ -20,4 +20,18 @@ $(POETRY) run alembic revision --autogenerate -m "update"
 
 upgrade:
 $(POETRY) run alembic upgrade head
+install:
+poetry install
+
+run:
+poetry run uvicorn app.main:app --reload
+
+test:
+poetry run pytest
+
+migrate:
+poetry run alembic revision --autogenerate -m "update"
+
+upgrade:
+poetry run alembic upgrade head
 
