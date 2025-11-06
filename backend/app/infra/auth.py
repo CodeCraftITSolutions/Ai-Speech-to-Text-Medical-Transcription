@@ -127,6 +127,8 @@ def clear_refresh_cookie(response: Response) -> None:
         httponly=True,
         secure=settings.REFRESH_COOKIE_SECURE,
         samesite="strict",
+        expires=0,
+        max_age=0,
     )
 
 
