@@ -1,11 +1,11 @@
 import {
-  Badge,
   Button,
   Input,
   Select,
   Switch,
   Card,
   ConfigProvider,
+  message,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import {
@@ -24,6 +24,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import exportToPdf from "../../utils/exportToPdf.jsx";
 import exportToWord from "../../utils/exportToWord.jsx";
+import { useUser } from "../../context/UserContext.jsx";
+import { createJob, uploadTranscription } from "../../api/client";
 
 const { Option } = Select;
 
@@ -39,11 +41,15 @@ export const NewTranscription = () => {
   const [sendToTranscriptionist, setSendToTranscriptionist] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [audioFile, setAudioFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const { theme } = useTheme();
+  const { token } = useUser();
 
   const intervalRef = useRef();
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const simulateTranscription = () => {
     const medicalPhrases = [
@@ -130,14 +136,57 @@ export const NewTranscription = () => {
   };
 
   const saveDraft = () => {
-    alert("Draft saved successfully!");
+    message.success("Draft saved successfully");
   };
 
-  const finalizeTranscription = () => {
-    if (sendToTranscriptionist) {
-      alert("Transcription sent to transcriptionist for review!");
-    } else {
-      alert("Transcription finalized!");
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    setAudioFile(file ?? null);
+    if (file) {
+      message.info(`Selected file: ${file.name}`);
+    }
+  };
+
+  const finalizeTranscription = async () => {
+    if (!token) {
+      message.error("You must be logged in to submit audio");
+      return;
+    }
+
+    if (!audioFile) {
+      message.warning("Please select an audio file to upload");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploadResponse = await uploadTranscription(token, audioFile);
+      message.success(uploadResponse?.detail ?? "Audio uploaded successfully");
+
+      await createJob(token, {
+        type: "transcription",
+        input_uri: uploadResponse?.filename ?? audioFile.name,
+      });
+
+      message.success(
+        sendToTranscriptionist
+          ? "Transcription submitted for review"
+          : "Transcription job created"
+      );
+
+      setIsRecording(false);
+      setIsPaused(false);
+      setMicLevel(0);
+      setTranscript("");
+      setRecordingTime(0);
+      setAudioFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      message.error(error?.message ?? "Unable to submit transcription");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -166,6 +215,7 @@ export const NewTranscription = () => {
             type="primary"
             icon={<Send />}
             className="text-xs"
+            loading={uploading}
           >
             {sendToTranscriptionist ? "Send to Review" : "Finalize"}
           </Button>
@@ -306,6 +356,33 @@ export const NewTranscription = () => {
                   <Option value="surgery">Surgery</Option>
                 </Select>
               </ConfigProvider>
+            </div>
+            <div className="space-y-2 mt-4">
+              <p className="text-muted-foreground font-medium">Audio File</p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    colorTextPlaceholder: theme === "dark" ? "#888888" : "#bfbfbf",
+                  },
+                }}
+              >
+                <Input
+                  type="file"
+                  accept="audio/*"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+              </ConfigProvider>
+              {audioFile ? (
+                <div className="text-sm text-foreground break-words">
+                  {audioFile.name}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Supported formats: WAV, MP3, M4A</p>
+              )}
             </div>
           </Card>
 

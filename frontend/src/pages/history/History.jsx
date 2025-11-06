@@ -1,355 +1,175 @@
-import {
-  Badge,
-  Button,
-  Input,
-  Select,
-  Table,
-  Dropdown,
-  Menu,
-  ConfigProvider,
-} from "antd";
-import {
-  Download,
-  Edit,
-  Eye,
-  FileText,
-  Search,
-  Calendar,
-  MoreHorizontal,
-} from "lucide-react";
-import React, { useState } from "react";
-import { useTheme } from "../../context/ThemeContext";
-
-const { Option } = Select;
+import { Button, Card, Table, Tag, message } from "antd";
+import { Calendar, Download, RefreshCcw } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useUser } from "../../context/UserContext.jsx";
+import { listJobs } from "../../api/client";
 
 export const History = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const { theme } = useTheme();
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { token } = useUser();
 
-  const transcriptions = [
-    {
-      id: "T001",
-      patientName: "John Smith",
-      patientId: "P12345",
-      doctor: "Dr. Sarah Johnson",
-      date: "2024-01-15",
-      status: "Completed",
-      specialty: "Cardiology",
-      duration: "12:34",
-      wordCount: 456,
-    },
-    {
-      id: "T002",
-      patientName: "Emily Davis",
-      patientId: "P12346",
-      doctor: "Dr. Sarah Johnson",
-      date: "2024-01-14",
-      status: "In Review",
-      specialty: "Cardiology",
-      duration: "08:22",
-      wordCount: 324,
-    },
-    {
-      id: "T003",
-      patientName: "Michael Brown",
-      patientId: "P12347",
-      doctor: "Dr. Sarah Johnson",
-      date: "2024-01-14",
-      status: "Draft",
-      specialty: "Internal Medicine",
-      duration: "15:45",
-      wordCount: 678,
-    },
-    {
-      id: "T004",
-      patientName: "Sarah Wilson",
-      patientId: "P12348",
-      doctor: "Dr. Sarah Johnson",
-      date: "2024-01-13",
-      status: "Completed",
-      specialty: "Neurology",
-      duration: "09:18",
-      wordCount: 389,
-    },
-    {
-      id: "T005",
-      patientName: "David Lee",
-      patientId: "P12349",
-      doctor: "Dr. Sarah Johnson",
-      date: "2024-01-12",
-      status: "Completed",
-      specialty: "Orthopedics",
-      duration: "11:56",
-      wordCount: 512,
-    },
-  ];
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Completed":
-        return <Badge color="green" text="Completed" />;
-      case "In Review":
-        return <Badge color="yellow" text="In Review" />;
-      case "Draft":
-        return <Badge color="gray" text="Draft" />;
-      default:
-        return <Badge text={status} />;
+  const fetchJobs = useCallback(async () => {
+    if (!token) {
+      return;
     }
-  };
+    setLoading(true);
+    try {
+      const response = await listJobs(token);
+      setJobs(Array.isArray(response) ? response : []);
+    } catch (error) {
+      message.error(error?.message ?? "Unable to load jobs");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
-  const filteredTranscriptions = transcriptions.filter((transcription) => {
-    const matchesSearch =
-      transcription.patientName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      transcription.patientId
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      transcription.specialty.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
-    const matchesStatus =
-      statusFilter === "all" || transcription.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const statusColor = useCallback((status) => {
+    switch (status) {
+      case "completed":
+        return "green";
+      case "processing":
+        return "blue";
+      case "failed":
+        return "red";
+      default:
+        return "gold";
+    }
+  }, []);
 
-  const exportTranscription = (id, format) => {
-    alert(`Exporting transcription ${id} as ${format}`);
-  };
-
-  const viewTranscription = (id) => {
-    alert(`Viewing transcription ${id}`);
-  };
-
-  const editTranscription = (id) => {
-    alert(`Editing transcription ${id}`);
-  };
+  const tableData = useMemo(
+    () =>
+      jobs.map((job) => ({
+        key: job.id,
+        id: job.id,
+        type: job.type,
+        status: job.status,
+        input_uri: job.input_uri,
+        output_uri: job.output_uri,
+        created_at: job.created_at,
+        updated_at: job.updated_at,
+      })),
+    [jobs]
+  );
 
   const columns = [
     {
-      title: "Patient",
-      dataIndex: "patientName",
-      key: "patientName",
-      render: (text, record) => (
-        <div>
-          <div className="font-medium">{record.patientName}</div>
-          <div className="text-gray-500">{record.patientId}</div>
-        </div>
-      ),
+      title: "Job ID",
+      dataIndex: "id",
+      key: "id",
+      width: 100,
     },
     {
-      title: "Date",
-      dataIndex: "date",
-      key: "date",
-      render: (date) => (
-        <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-gray-400" />
-          {new Date(date).toLocaleDateString()}
-        </div>
-      ),
-    },
-    {
-      title: "Specialty",
-      dataIndex: "specialty",
-      key: "specialty",
-      render: (text) => <Badge count={text} />,
-    },
-    {
-      title: "Duration",
-      dataIndex: "duration",
-      key: "duration",
-    },
-    {
-      title: "Words",
-      dataIndex: "wordCount",
-      key: "wordCount",
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      render: (value) => value ?? "—",
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => getStatusBadge(status),
+      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
     },
     {
-      title: "Actions",
-      key: "actions",
-      align: "right",
-      render: (_, record) => {
-        const menu = {
-          items: [
-            {
-              key: "1",
-              label: (
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Eye size={16} /> View
-                </span>
-              ),
-              onClick: () => viewTranscription(record.id),
-            },
-            {
-              key: "2",
-              label: (
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Edit size={16} /> Edit
-                </span>
-              ),
-              onClick: () => editTranscription(record.id),
-              disabled: record.status === "Completed",
-            },
-            {
-              key: "3",
-              label: (
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Download size={16} /> Export PDF
-                </span>
-              ),
-              onClick: () => exportTranscription(record.id, "PDF"),
-            },
-            {
-              key: "4",
-              label: (
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Download size={16} /> Export Word
-                </span>
-              ),
-              onClick: () => exportTranscription(record.id, "Word"),
-            },
-          ],
-        };
-
-        return (
-          <Dropdown menu={menu} trigger={["click"]}>
-            <Button icon={<MoreHorizontal size={16} />} />
-          </Dropdown>
-        );
-      },
+      title: "Created",
+      dataIndex: "created_at",
+      key: "created_at",
+      render: (date) =>
+        date ? new Date(date).toLocaleString() : "—",
+    },
+    {
+      title: "Updated",
+      dataIndex: "updated_at",
+      key: "updated_at",
+      render: (date) =>
+        date ? new Date(date).toLocaleString() : "—",
+    },
+    {
+      title: "Input",
+      dataIndex: "input_uri",
+      key: "input_uri",
+      ellipsis: true,
+      render: (value) => value || "—",
+    },
+    {
+      title: "Output",
+      dataIndex: "output_uri",
+      key: "output_uri",
+      ellipsis: true,
+      render: (value) =>
+        value ? (
+          <Button
+            type="link"
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            icon={<Download size={14} />}
+          >
+            Download
+          </Button>
+        ) : (
+          "—"
+        ),
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-            Transcription History
-          </h1>
-          <p className="text-muted-foreground">
-            View and manage your transcriptions
-          </p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Transcription Jobs</h1>
+          <p className="text-muted-foreground">Track the status of submitted transcription jobs.</p>
         </div>
+        <Button icon={<RefreshCcw size={16} />} onClick={fetchJobs} loading={loading}>
+          Refresh
+        </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-2 sm:gap-4">
-        <div className="relative flex-1">
-          {/* <Search className="absolute left-3 top-3 h-4 w-4 text-foreground" /> */}
-          <ConfigProvider
-            theme={{
-              token: {
-                colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
-                colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
-                colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-                colorTextPlaceholder: theme === "dark" ? "#888888" : "#bfbfbf",
-                activeBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-                hoverBorderColor: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-              },
-            }}
-          >
-            <Input
-              prefix={<Search className="text-foreground"/>}
-              placeholder="Search by patient name, ID, or specialty..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </ConfigProvider>
-        </div>
-        <ConfigProvider
-          theme={{
-            token: {
-              colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
-              colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
-
-              optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
-              selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
-              optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
-              optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
-              colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
-            },
-          }}
-        >
-          <Select
-            value={statusFilter}
-            onChange={setStatusFilter}
-            className="w-full md:w-44"
-            // style={{ width: 160 }}
-          >
-            <Option value="all">All Status</Option>
-            <Option value="Completed">Completed</Option>
-            <Option value="In Review">In Review</Option>
-            <Option value="Draft">Draft</Option>
-          </Select>
-        </ConfigProvider>
-
-        <ConfigProvider
-          theme={{
-            token: {
-              colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
-              colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
-
-              optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
-              selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
-              optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
-              optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
-              colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
-            },
-          }}
-        >
-          <Select
-            value={dateFilter}
-            onChange={setDateFilter}
-            className="w-full md:w-44"
-
-            // style={{ width: 160 }}
-          >
-            <Option value="all">All Time</Option>
-            <Option value="today">Today</Option>
-            <Option value="week">This Week</Option>
-            <Option value="month">This Month</Option>
-          </Select>
-        </ConfigProvider>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-card border-border" title="Total Jobs">
+          <div className="text-2xl font-semibold text-foreground">{jobs.length}</div>
+          <p className="text-xs text-muted-foreground">Submitted to the processing queue</p>
+        </Card>
+        <Card className="bg-card border-border" title="Completed">
+          <div className="text-2xl font-semibold text-foreground">
+            {jobs.filter((job) => job.status === "completed").length}
+          </div>
+          <p className="text-xs text-muted-foreground">Jobs with available transcripts</p>
+        </Card>
+        <Card className="bg-card border-border" title="Pending">
+          <div className="text-2xl font-semibold text-foreground">
+            {jobs.filter((job) => job.status !== "completed" && job.status !== "failed").length}
+          </div>
+          <p className="text-xs text-muted-foreground">Awaiting processing</p>
+        </Card>
       </div>
 
-      <div className="overflow-x-auto">
-        <ConfigProvider
-          theme={{
-            token: {
-              colorBgContainer: theme === "dark" ? "#212121" : "#ffffff",
-              colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
-              optionSelectedBg: theme === "dark" ? "#bfbfbf" : "#000000",
-              selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
-              optionSelectedColor: theme === "dark" ? "#0a0a0a" : "#ffffff",
-              optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
-              colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
-            },
-          }}
-        >
-          <Table
-            className="w-full"
-            columns={columns}
-            dataSource={filteredTranscriptions}
-            rowKey="id"
-            pagination={{ pageSize: 5 }}
-          />
-        </ConfigProvider>
-      </div>
+      <Card
+        className="bg-card border-border overflow-x-auto"
+        title={
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span className="text-foreground">Job History</span>
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar size={14} />
+              Updated {new Date().toLocaleString()}
+            </span>
+          </div>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={tableData}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 768 }}
+          locale={{ emptyText: loading ? "Loading jobs..." : "No jobs available" }}
+        />
+      </Card>
     </div>
   );
 };
