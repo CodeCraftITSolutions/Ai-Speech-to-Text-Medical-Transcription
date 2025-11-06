@@ -19,7 +19,16 @@ class Settings(BaseSettings):
     STORAGE_KEY: str
     STORAGE_SECRET: str
 
-    FRONTEND_ORIGIN: str = "http://localhost:3000"
+    FRONTEND_ORIGIN: str = "http://localhost:3000,http://localhost:5173"
+
+    @property
+    def frontend_origins(self) -> list[str]:
+        """Return the configured list of frontend origins for CORS."""
+        return [
+            origin.strip()
+            for origin in self.FRONTEND_ORIGIN.split(",")
+            if origin.strip()
+        ]
 
     ASR_MODEL: str = "whisper-large"  # TODO: used by AI team
 
