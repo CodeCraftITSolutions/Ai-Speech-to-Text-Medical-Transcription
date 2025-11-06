@@ -10,6 +10,7 @@ from app.api.v1 import (
     routes_jobs,
     routes_reports,
     routes_transcribe,
+    routes_users,
 )
 from app.infra.logging import logger
 from app.infra.telemetry import record_metrics
@@ -34,6 +35,7 @@ app.include_router(routes_auth.router)
 app.include_router(routes_jobs.router)
 app.include_router(routes_reports.router)
 app.include_router(routes_transcribe.router)
+app.include_router(routes_users.router)
 
 
 @app.on_event("startup")

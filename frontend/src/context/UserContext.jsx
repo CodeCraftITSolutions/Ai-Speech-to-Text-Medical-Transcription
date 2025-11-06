@@ -11,14 +11,24 @@ import * as api from "../api/client";
 
 const UserContext = createContext();
 
-const normalizeUser = (user) => ({
-  id: user.id,
-  username: user.username,
-  name: user.username,
-  role: user.role,
-  createdAt: user.created_at,
-  updatedAt: user.updated_at,
-});
+const normalizeUser = (user) => {
+  const firstName = user.first_name ?? null;
+  const lastName = user.last_name ?? null;
+  const phoneNumber = user.phone_number ?? null;
+  const displayName = [firstName, lastName].filter(Boolean).join(" ") || user.username;
+
+  return {
+    id: user.id,
+    username: user.username,
+    name: displayName,
+    role: user.role,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
+    firstName,
+    lastName,
+    phoneNumber,
+  };
+};
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);

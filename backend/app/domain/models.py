@@ -20,6 +20,9 @@ class User(Base):
 
     id: int = Column(Integer, primary_key=True, index=True)
     username: str = Column(String(255), unique=True, nullable=False, index=True)
+    first_name: Optional[str] = Column(String(255), nullable=True)
+    last_name: Optional[str] = Column(String(255), nullable=True)
+    phone_number: Optional[str] = Column(String(32), nullable=True)
     hashed_password: str = Column(String(255), nullable=False)
     role: str = Column(String(50), nullable=False, default=UserRole.ASSISTANT.value)
     created_at: datetime = Column(DateTime, default=datetime.utcnow, nullable=False)
