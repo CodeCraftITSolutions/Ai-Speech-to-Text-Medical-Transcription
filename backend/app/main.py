@@ -39,6 +39,7 @@ app.include_router(routes_transcribe.router)
 @app.on_event("startup")
 async def startup_event() -> None:
     logger.info("Starting %s in %s", settings.APP_NAME, settings.ENV)
+    logger.info("CORS allow_origins: %s", settings.frontend_origins)
 
 
 @app.on_event("shutdown")

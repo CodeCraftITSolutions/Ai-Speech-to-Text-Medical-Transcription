@@ -12,7 +12,7 @@ Base = declarative_base()
 class UserRole(str, PyEnum):
     ADMIN = "admin"
     DOCTOR = "doctor"
-    ASSISTANT = "assistant"
+    ASSISTANT = "transcriptionist"
 
 
 class User(Base):
