@@ -1,17 +1,12 @@
-"""add totp fields to users
-
-Revision ID: 0003_add_totp_fields
-Revises: 0002_add_user_profile_fields
-Create Date: 2025-02-14 00:00:00.000000
-"""
+"""add totp fields to users"""
 
 from alembic import op
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "0003_add_totp_fields"
-down_revision = "0002_add_user_profile_fields"
+revision = "0003"
+down_revision = "0002"
 branch_labels = None
 depends_on = None
 
