@@ -9,37 +9,122 @@ import {
   TrendingUp,
   UserCheck,
 } from "lucide-react";
-import React from "react";
-import { useUser } from "../../context/UserContext.jsx";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router";
+
+import useJobsData from "../../hooks/useJobsData.js";
+import { useUser } from "../../context/UserContext.jsx";
+
+const normaliseStatus = (status) =>
+  typeof status === "string" ? status.toLowerCase() : "";
+
+const formatStatus = (status) => {
+  const value = normaliseStatus(status);
+  if (!value) {
+    return "Unknown";
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const getTimestamp = (job) => job.updated_at ?? job.created_at;
+
+const formatNumber = (value) => Number(value ?? 0).toLocaleString();
 
 export const Home = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const role = user?.role ?? "assistant";
+  const { jobs, stats, recentJobs, loading } = useJobsData();
 
-  const getDashboardCards = () => {
+  const completedToday = useMemo(() => {
+    const today = new Date().toDateString();
+    return jobs.filter((job) => {
+      if (normaliseStatus(job.status) !== "completed") {
+        return false;
+      }
+      const timestamp = getTimestamp(job);
+      if (!timestamp) {
+        return false;
+      }
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return false;
+      }
+      return date.toDateString() === today;
+    }).length;
+  }, [jobs]);
+
+  const completedThisMonth = useMemo(() => {
+    const now = new Date();
+    return jobs.filter((job) => {
+      if (normaliseStatus(job.status) !== "completed") {
+        return false;
+      }
+      const timestamp = getTimestamp(job);
+      if (!timestamp) {
+        return false;
+      }
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return false;
+      }
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth()
+      );
+    }).length;
+  }, [jobs]);
+
+  const inProgressCount = useMemo(
+    () =>
+      jobs.filter((job) => {
+        const status = normaliseStatus(job.status);
+        return status === "processing" || status === "pending";
+      }).length,
+    [jobs]
+  );
+
+  const recentActivityData = useMemo(
+    () =>
+      recentJobs.map((job) => {
+        const status = normaliseStatus(job.status);
+        const timestamp = getTimestamp(job);
+        return {
+          id: job.id,
+          title: `Job #${job.id}`,
+          description: job.type ?? "Transcription job",
+          status: formatStatus(status),
+          isCompleted: status === "completed",
+          date: timestamp ? new Date(timestamp).toLocaleString() : "—",
+        };
+      }),
+    [recentJobs]
+  );
+
+  const dashboardCards = useMemo(() => {
+    const { total, inQueue, completed, failed, readyForReview } = stats;
+
     switch (role) {
       case "doctor":
         return [
           {
             title: "Today's Transcriptions",
-            value: "12",
-            description: "+3 from yesterday",
+            value: formatNumber(completedToday),
+            description: `${formatNumber(completedThisMonth)} completed this month`,
             icon: FileText,
             color: "text-blue-600",
           },
           {
             title: "Pending Reviews",
-            value: "4",
-            description: "Awaiting transcriptionist",
+            value: formatNumber(readyForReview),
+            description: `${formatNumber(inQueue)} still processing`,
             icon: Clock,
             color: "text-orange-600",
           },
           {
-            title: "This Month",
-            value: "156",
-            description: "Total transcriptions",
+            title: "Total Jobs",
+            value: formatNumber(total),
+            description: `${formatNumber(completed)} completed overall`,
             icon: TrendingUp,
             color: "text-green-600",
           },
@@ -48,22 +133,22 @@ export const Home = () => {
         return [
           {
             title: "Review Queue",
-            value: "8",
-            description: "Pending reviews",
+            value: formatNumber(readyForReview),
+            description: `${formatNumber(inProgressCount)} in progress`,
             icon: UserCheck,
             color: "text-blue-600",
           },
           {
             title: "Completed Today",
-            value: "15",
-            description: "+2 from yesterday",
+            value: formatNumber(completedToday),
+            description: `${formatNumber(completedThisMonth)} this month`,
             icon: FileText,
             color: "text-green-600",
           },
           {
-            title: "Average Time",
-            value: "12m",
-            description: "Per transcription",
+            title: "Active Jobs",
+            value: formatNumber(inQueue),
+            description: `${formatNumber(failed)} needing attention`,
             icon: Clock,
             color: "text-purple-600",
           },
@@ -71,33 +156,39 @@ export const Home = () => {
       case "admin":
         return [
           {
-            title: "Total Users",
-            value: "45",
-            description: "12 doctors, 8 transcriptionists",
-            icon: Shield,
+            title: "Total Jobs",
+            value: formatNumber(total),
+            description: `${formatNumber(completed)} completed to date`,
+            icon: BarChart3,
             color: "text-blue-600",
           },
           {
-            title: "System Usage",
-            value: "89%",
-            description: "This month",
-            icon: BarChart3,
+            title: "Ready for Review",
+            value: formatNumber(readyForReview),
+            description: `${formatNumber(inQueue)} still queued`,
+            icon: UserCheck,
             color: "text-green-600",
           },
           {
-            title: "Active Sessions",
-            value: "23",
-            description: "Currently online",
-            icon: TrendingUp,
+            title: "Failed Jobs",
+            value: formatNumber(failed),
+            description: "Requires follow-up",
+            icon: Shield,
             color: "text-orange-600",
           },
         ];
       default:
         return [];
     }
-  };
+  }, [
+    stats,
+    role,
+    completedToday,
+    completedThisMonth,
+    inProgressCount,
+  ]);
 
-  const getQuickActions = () => {
+  const quickActions = useMemo(() => {
     switch (role) {
       case "doctor":
         return [
@@ -153,26 +244,15 @@ export const Home = () => {
       default:
         return [];
     }
-  };
+  }, [navigate, role]);
 
-  const recentActivityData = [
-  { patient: "John Smith", date: "2 hours ago", status: "Completed", type: "Cardiology Consultation" },
-  { patient: "Sarah Johnson", date: "4 hours ago", status: "In Review", type: "Follow-up Visit" },
-  { patient: "Michael Brown", date: "1 day ago", status: "Completed", type: "Initial Assessment" },
-];
-
-  const dashboardCards = getDashboardCards();
-  const quickActions = getQuickActions();
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dashboardCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <Card
-              key={index}
-              className="bg-card border-border md:w-72 lg:w-auto"
-            >
+            <Card key={index} className="bg-card border-border md:w-72 lg:w-auto">
               <div className="flex items-center gap-4">
                 <Icon className={`w-6 sm:w-8 h-6 sm:h-8 ${card.color}`} />
                 <div>
@@ -234,34 +314,38 @@ export const Home = () => {
       </div>
       <Divider className="my-6" />
       <div>
-        <h3 className="text-lg font-semibold text-foreground">
-          Recent Activity
-        </h3>
+        <h3 className="text-lg font-semibold text-foreground">Recent Activity</h3>
         <Card className="w-full bg-card border-border">
           <div className="space-y-4">
-            {recentActivityData.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between py-2 mb-1 border-gray-200 border-b"
-              >
-                <div>
-                  <p className="font-medium text-foreground">{item.patient}</p>
-                  <p className="text-sm text-muted-foreground">{item.type}</p>
+            {recentActivityData.length > 0 ? (
+              recentActivityData.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between py-2 mb-1 border-gray-200 border-b"
+                >
+                  <div>
+                    <p className="font-medium text-foreground">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        item.isCompleted
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                    <p className="text-sm text-gray-500 mt-1">{item.date}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      item.status === "Completed"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                  <p className="text-sm text-gray-500 mt-1">{item.date}</p>
-                </div>
+              ))
+            ) : (
+              <div className="py-6 text-center text-muted-foreground">
+                {loading ? "Loading activity..." : "No recent activity yet."}
               </div>
-            ))}
+            )}
           </div>
         </Card>
       </div>

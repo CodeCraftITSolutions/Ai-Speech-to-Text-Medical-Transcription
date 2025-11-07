@@ -272,7 +272,6 @@ export const NewTranscription = () => {
       audioStreamRef.current = stream;
 
       resetTranscript();
-      setTranscript("");
       setPendingTranscript("");
       setRecordingTime(0);
 
@@ -336,13 +335,21 @@ export const NewTranscription = () => {
     setIsPaused(false);
   };
 
-  const discardTranscription = () => {
+  const discardRecording = () => {
+    resetTranscript();
+    setPendingTranscript("");
+    setRecordingTime(0);
+    setMicLevel(0);
+    message.info("Latest recording discarded");
+  };
+
+  const clearConfirmedTranscript = () => {
     resetTranscript();
     setTranscript("");
     setPendingTranscript("");
     setRecordingTime(0);
     setMicLevel(0);
-    message.info("Transcription discarded");
+    message.info("Transcription cleared");
   };
 
   const formatTime = (seconds) => {
@@ -680,13 +687,16 @@ export const NewTranscription = () => {
                   >
                     Confirm Transcript
                   </Button>
-                  <Button
-                    onClick={discardTranscription}
-                    block
-                    disabled={(transcript ?? "").trim().length === 0}
-                  >
-                    Clear Transcript
-                  </Button>
+                  {(pendingTranscript ?? "").trim().length > 0 && (
+                    <Button onClick={discardRecording} block>
+                      Discard Recording
+                    </Button>
+                  )}
+                  {(transcript ?? "").trim().length > 0 && (
+                    <Button onClick={clearConfirmedTranscript} block>
+                      Clear Transcript
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
