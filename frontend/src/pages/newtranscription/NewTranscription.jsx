@@ -14,6 +14,7 @@ import {
   Mic,
   Save,
   Send,
+  Check,
   Square,
   User,
   Volume2,
@@ -33,6 +34,7 @@ export const NewTranscription = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcript, setTranscript] = useState("");
+  const [pendingTranscript, setPendingTranscript] = useState("");
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -62,6 +64,18 @@ export const NewTranscription = () => {
   const dataArrayRef = useRef(null);
   const animationFrameRef = useRef(null);
   const sourceNodeRef = useRef(null);
+
+  const formatSpeechErrorMessage = useCallback((code) => {
+    if (code === "speech-recognition-microphone-unavailable") {
+      return "Microphone access is required for speech recognition.";
+    }
+
+    if (typeof code === "string") {
+      return `Speech recognition error: ${code}`;
+    }
+
+    return "Speech recognition encountered an unexpected error.";
+  }, []);
 
   const stopMicMonitoring = useCallback(() => {
     if (animationFrameRef.current) {
@@ -181,18 +195,12 @@ export const NewTranscription = () => {
       return;
     }
 
-    message.error(
-      typeof speechError === "string"
-        ? `Speech recognition error: ${speechError}`
-        : "Speech recognition encountered an unexpected error"
-    );
-  }, [speechError]);
+    message.error(formatSpeechErrorMessage(speechError));
+  }, [speechError, formatSpeechErrorMessage]);
 
   useEffect(() => {
-    if (isRecording || listening) {
-      setTranscript(speechTranscript);
-    }
-  }, [isRecording, listening, speechTranscript]);
+    setPendingTranscript((speechTranscript ?? "").trim());
+  }, [speechTranscript]);
 
   useEffect(() => {
     return () => {
@@ -223,10 +231,11 @@ export const NewTranscription = () => {
 
       resetTranscript();
       setTranscript("");
+      setPendingTranscript("");
       setRecordingTime(0);
 
       startMicMonitoring(stream);
-      startListening({ continuous: true, interimResults: true });
+      startListening({ continuous: true, interimResults: false });
       setIsRecording(true);
       setIsPaused(false);
     } catch (error) {
@@ -245,7 +254,7 @@ export const NewTranscription = () => {
 
     if (isPaused) {
       try {
-        startListening({ continuous: true, interimResults: true });
+        startListening({ continuous: true, interimResults: false });
         if (audioStreamRef.current) {
           startMicMonitoring(audioStreamRef.current);
         }
@@ -288,6 +297,7 @@ export const NewTranscription = () => {
   const discardTranscription = () => {
     resetTranscript();
     setTranscript("");
+    setPendingTranscript("");
     setRecordingTime(0);
     setMicLevel(0);
     message.info("Transcription discarded");
@@ -303,6 +313,20 @@ export const NewTranscription = () => {
 
   const saveDraft = () => {
     message.success("Draft saved successfully");
+  };
+
+  const confirmTranscript = () => {
+    const normalizedTranscript = (pendingTranscript ?? "").trim();
+
+    if (normalizedTranscript.length === 0) {
+      message.warning("No transcript available to confirm");
+      return;
+    }
+
+    setTranscript(normalizedTranscript);
+    resetTranscript();
+    setPendingTranscript("");
+    message.success("Transcript confirmed from the latest recording");
   };
 
   const finalizeTranscription = () => {
@@ -539,6 +563,14 @@ export const NewTranscription = () => {
                     {listening ? "Listening" : "Start"}
                   </Button>
                   <Button
+                    onClick={confirmTranscript}
+                    icon={<Check />}
+                    block
+                    disabled={(pendingTranscript ?? "").trim().length === 0}
+                  >
+                    Confirm Transcript
+                  </Button>
+                  <Button
                     onClick={discardTranscription}
                     block
                     disabled={(transcript ?? "").trim().length === 0}
@@ -566,6 +598,11 @@ export const NewTranscription = () => {
                 </>
               )}
             </div>
+            {!isRecording && (pendingTranscript ?? "").trim().length > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                New speech has been captured. Confirm it to update the transcript.
+              </p>
+            )}
           </Card>
 
           <Card
@@ -691,7 +728,7 @@ export const NewTranscription = () => {
                 <TextArea
                   ref={textareaRef}
                   rows={8}
-                  placeholder="Transcription will appear here as you speak..."
+                  placeholder="Confirmed transcription will appear here after you approve it."
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
                   className="min-h-[400px] font-mono text-sm leading-relaxed text-background text-foreground bg-card border-border "
