@@ -2,8 +2,9 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.sql import expression as sql
 
 
 Base = declarative_base()
@@ -29,8 +30,23 @@ class User(Base):
     updated_at: datetime = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+    two_factor_enabled: bool = Column(
+        Boolean, nullable=False, default=False, server_default=sql.false()
+    )
+    two_factor_shared_secret: Optional[str] = Column(String(255), nullable=True)
+    two_factor_confirmed_at: Optional[datetime] = Column(DateTime, nullable=True)
+    two_factor_challenge_token: Optional[str] = Column(String(255), nullable=True)
+    two_factor_challenge_expires_at: Optional[datetime] = Column(DateTime, nullable=True)
 
     jobs = relationship("Job", back_populates="user", cascade="all,delete-orphan")
+
+    @property
+    def two_factor_confirmed(self) -> bool:
+        return bool(self.two_factor_confirmed_at)
+
+    @property
+    def two_factor_method(self) -> Optional[str]:
+        return "totp" if self.two_factor_enabled else None
 
 
 class JobStatus(str, PyEnum):
