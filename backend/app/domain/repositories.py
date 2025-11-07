@@ -15,13 +15,6 @@ class UserRepository:
     def get(self, user_id: int) -> Optional[models.User]:
         return self.db.query(models.User).filter(models.User.id == user_id).first()
 
-    def get_by_two_factor_challenge(self, challenge_id: str) -> Optional[models.User]:
-        return (
-            self.db.query(models.User)
-            .filter(models.User.two_factor_challenge_token == challenge_id)
-            .first()
-        )
-
     def create(self, username: str, hashed_password: str, role: str) -> models.User:
         user = models.User(username=username, hashed_password=hashed_password, role=role)
         self.db.add(user)

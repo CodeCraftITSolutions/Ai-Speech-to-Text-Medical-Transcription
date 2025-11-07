@@ -1,18 +1,13 @@
 // src/pages/settings/Settings.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Alert,
   Button,
   Card,
   ConfigProvider,
-  Divider,
   Input,
-  Modal,
   Select,
   Switch,
   Tabs,
-  Tag,
-  Typography,
   message,
 } from "antd";
 import {
@@ -26,13 +21,7 @@ import {
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
 import { useUser } from "../../context/UserContext.jsx";
 import { useTheme } from "../../context/ThemeContext";
-import {
-  updateCurrentUser,
-  changePassword,
-  startTwoFactorEnrollment,
-  enableTwoFactor,
-  disableTwoFactor,
-} from "../../api/client";
+import { updateCurrentUser } from "../../api/client";
 
 const { Option } = Select;
 
@@ -91,292 +80,21 @@ const ProfileCard = React.memo(function ProfileCard({
 });
 
 const SecurityCard = React.memo(function SecurityCard() {
-  const { user, callWithAuth, refreshUser } = useUser();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [updatingPassword, setUpdatingPassword] = useState(false);
-
-  const [twoFactorEnrollment, setTwoFactorEnrollment] = useState(null);
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [startingEnrollment, setStartingEnrollment] = useState(false);
-  const [verifyingTwoFactor, setVerifyingTwoFactor] = useState(false);
-  const [disableModalVisible, setDisableModalVisible] = useState(false);
-  const [disablePassword, setDisablePassword] = useState("");
-  const [disablingTwoFactor, setDisablingTwoFactor] = useState(false);
-
-  const twoFactorEnabled = Boolean(user?.twoFactorEnabled);
-  const twoFactorConfirmed = Boolean(user?.twoFactorConfirmed);
-
-  useEffect(() => {
-    setTwoFactorEnrollment(null);
-    setTwoFactorCode("");
-  }, [twoFactorEnabled]);
-
-  const handlePasswordUpdate = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      message.error("Fill in all password fields before updating.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      message.error("New passwords do not match.");
-      return;
-    }
-    if (newPassword.length < 8) {
-      message.error("New password must be at least 8 characters long.");
-      return;
-    }
-
-    setUpdatingPassword(true);
-    try {
-      await callWithAuth((token) =>
-        changePassword(token, {
-          current_password: currentPassword,
-          new_password: newPassword,
-        })
-      );
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      message.success("Password updated successfully.");
-    } catch (error) {
-      message.error(error?.message ?? "Unable to update password");
-    } finally {
-      setUpdatingPassword(false);
-    }
-  };
-
-  const handleStartTwoFactorEnrollment = async () => {
-    setStartingEnrollment(true);
-    try {
-      const response = await callWithAuth(startTwoFactorEnrollment);
-      setTwoFactorEnrollment(response);
-      setTwoFactorCode("");
-      message.success(
-        "Scan the QR code or enter the secret into your authenticator app, then enter the code it generates."
-      );
-    } catch (error) {
-      message.error(error?.message ?? "Unable to start two-factor enrollment");
-    } finally {
-      setStartingEnrollment(false);
-    }
-  };
-
-  const handleTwoFactorCodeChange = (e) => {
-    const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setTwoFactorCode(digitsOnly);
-  };
-
-  const handleVerifyTwoFactor = async () => {
-    if (!twoFactorEnrollment) {
-      return;
-    }
-    const trimmed = twoFactorCode.trim();
-    if (trimmed.length < 4) {
-      message.error("Enter the 6-digit code from your authenticator app.");
-      return;
-    }
-
-    setVerifyingTwoFactor(true);
-    try {
-      await callWithAuth((token) =>
-        enableTwoFactor(token, {
-          challenge_id: twoFactorEnrollment.challenge_id,
-          code: trimmed,
-        })
-      );
-      await refreshUser();
-      setTwoFactorEnrollment(null);
-      setTwoFactorCode("");
-      message.success("Two-factor authentication is now enabled.");
-    } catch (error) {
-      message.error(error?.message ?? "Unable to enable two-factor authentication");
-    } finally {
-      setVerifyingTwoFactor(false);
-    }
-  };
-
-  const handleDisableTwoFactor = async () => {
-    if (!disablePassword) {
-      message.error("Enter your current password to disable two-factor authentication.");
-      return;
-    }
-    setDisablingTwoFactor(true);
-    try {
-      await callWithAuth((token) =>
-        disableTwoFactor(token, { current_password: disablePassword })
-      );
-      await refreshUser();
-      setDisablePassword("");
-      setDisableModalVisible(false);
-      message.success("Two-factor authentication disabled.");
-    } catch (error) {
-      message.error(error?.message ?? "Unable to disable two-factor authentication");
-    } finally {
-      setDisablingTwoFactor(false);
-    }
-  };
-
   return (
-    <>
-      <Card title="Password & Security" extra={<Lock className="w-5 h-5" />}>
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-medium mb-2">Change Password</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Input.Password
-                placeholder="Current password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-              <Input.Password
-                placeholder="New password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <Input.Password
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-            <Button
-              className="mt-3"
-              type="primary"
-              onClick={handlePasswordUpdate}
-              loading={updatingPassword}
-            >
-              Update Password
-            </Button>
-          </div>
+    <Card title="Password & Security" extra={<Lock className="w-5 h-5" />}>
+      <Input.Password placeholder="Current Password" className="mt-2" />
+      <Input.Password placeholder="New Password" className="mt-4" />
+      <Input.Password placeholder="Confirm New Password" className="mt-4" />
 
-          <Divider />
-
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h4 className="font-medium">Two-Factor Authentication</h4>
-                <p className="text-sm text-muted-foreground">
-                  Secure your account by requiring a verification code at sign-in.
-                </p>
-              </div>
-              <Tag color={twoFactorEnabled ? "success" : "default"}>
-                {twoFactorEnabled ? "Enabled" : "Disabled"}
-              </Tag>
-            </div>
-
-            {!twoFactorEnabled ? (
-              <div className="space-y-3">
-                {twoFactorEnrollment ? (
-                  <>
-                    <Alert
-                      type="info"
-                      showIcon
-                      message="Scan the QR code or enter the secret into your authenticator app, then verify the 6-digit code."
-                    />
-                    {twoFactorEnrollment?.debug_code ? (
-                      <Alert
-                        type="warning"
-                        showIcon
-                        message={`Development code: ${twoFactorEnrollment.debug_code}`}
-                      />
-                    ) : null}
-                    <div className="space-y-2 bg-gray-50 border border-dashed border-gray-300 rounded-md p-3">
-                      <Typography.Paragraph className="mb-0" strong>
-                        Authenticator Secret:
-                      </Typography.Paragraph>
-                      <Typography.Paragraph className="mb-0" copyable>
-                        <Typography.Text code>{twoFactorEnrollment.secret}</Typography.Text>
-                      </Typography.Paragraph>
-                      <Typography.Paragraph className="mb-0">
-                        <Typography.Link
-                          href={twoFactorEnrollment.provisioning_uri}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open setup link
-                        </Typography.Link>
-                      </Typography.Paragraph>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Input
-                        placeholder="123456"
-                        value={twoFactorCode}
-                        onChange={handleTwoFactorCodeChange}
-                        inputMode="numeric"
-                        maxLength={6}
-                      />
-                      <Button
-                        type="primary"
-                        onClick={handleVerifyTwoFactor}
-                        loading={verifyingTwoFactor}
-                      >
-                        Verify Code
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <Button
-                    type="primary"
-                    onClick={handleStartTwoFactorEnrollment}
-                    loading={startingEnrollment}
-                  >
-                    Set up authenticator app
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <Alert
-                  type={twoFactorConfirmed ? "success" : "info"}
-                  showIcon
-                  message={
-                    twoFactorConfirmed
-                      ? "Two-factor authentication is active for your account."
-                      : "Finish setup by verifying a code from your authenticator app."
-                  }
-                  description="Authenticator codes will be required whenever you sign in."
-                />
-                <Button danger onClick={() => setDisableModalVisible(true)}>
-                  Disable two-factor authentication
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <Divider />
-
-          <div className="flex justify-between items-center">
-            <span>Login Notifications</span>
-            <Switch defaultChecked />
-          </div>
-        </div>
-      </Card>
-
-      <Modal
-        title="Disable two-factor authentication"
-        open={disableModalVisible}
-        onCancel={() => {
-          if (!disablingTwoFactor) {
-            setDisableModalVisible(false);
-            setDisablePassword("");
-          }
-        }}
-        onOk={handleDisableTwoFactor}
-        okText="Disable"
-        okButtonProps={{ danger: true }}
-        confirmLoading={disablingTwoFactor}
-      >
-        <p className="text-sm text-muted-foreground mb-2">
-          Enter your current password to confirm that you want to disable two-factor authentication.
-        </p>
-        <Input.Password
-          placeholder="Current password"
-          value={disablePassword}
-          onChange={(e) => setDisablePassword(e.target.value)}
-        />
-      </Modal>
-    </>
+      <div className="flex justify-between items-center mt-4">
+        <span>Two-Factor Authentication</span>
+        <Switch />
+      </div>
+      <div className="flex justify-between items-center mt-4">
+        <span>Login Notifications</span>
+        <Switch defaultChecked />
+      </div>
+    </Card>
   );
 });
 

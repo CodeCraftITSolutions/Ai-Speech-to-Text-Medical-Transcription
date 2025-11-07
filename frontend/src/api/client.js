@@ -101,69 +101,6 @@ export const updateCurrentUser = async (token, payload) => {
   return handleResponse(response);
 };
 
-export const changePassword = async (token, payload) => {
-  const response = await fetch(`${API_BASE_URL}/v1/users/me/change-password`, {
-    method: "POST",
-    headers: buildHeaders(token, { "Content-Type": "application/json" }),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-
-  return handleResponse(response);
-};
-
-export const startTwoFactorEnrollment = async (token) => {
-  const response = await fetch(
-    `${API_BASE_URL}/v1/users/me/security/start-two-factor`,
-    {
-      method: "POST",
-      headers: buildHeaders(token, { "Content-Type": "application/json" }),
-      credentials: "include",
-    }
-  );
-
-  return handleResponse(response);
-};
-
-export const enableTwoFactor = async (token, payload) => {
-  const response = await fetch(
-    `${API_BASE_URL}/v1/users/me/security/enable-two-factor`,
-    {
-      method: "POST",
-      headers: buildHeaders(token, { "Content-Type": "application/json" }),
-      credentials: "include",
-      body: JSON.stringify(payload),
-    }
-  );
-
-  return handleResponse(response);
-};
-
-export const disableTwoFactor = async (token, payload) => {
-  const response = await fetch(
-    `${API_BASE_URL}/v1/users/me/security/disable-two-factor`,
-    {
-      method: "POST",
-      headers: buildHeaders(token, { "Content-Type": "application/json" }),
-      credentials: "include",
-      body: JSON.stringify(payload),
-    }
-  );
-
-  return handleResponse(response);
-};
-
-export const verifyTwoFactorLogin = async ({ challengeId, code }) => {
-  const response = await fetch(`${API_BASE_URL}/v1/auth/login/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ challenge_id: challengeId, code }),
-  });
-
-  return handleResponse(response);
-};
-
 export const listJobs = async (token) => {
   const response = await fetch(`${API_BASE_URL}/v1/jobs`, {
     method: "GET",
