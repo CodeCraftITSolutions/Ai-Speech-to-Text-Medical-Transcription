@@ -1,5 +1,5 @@
 // src/pages/settings/Settings.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Button,
   Card,
@@ -97,12 +97,44 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
   const [totpBusy, setTotpBusy] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
   const [disablingTotp, setDisablingTotp] = useState(false);
-  const totpQrUrl = useMemo(() => {
+  const [totpQrDataUrl, setTotpQrDataUrl] = useState(null);
+
+  useEffect(() => {
+    let isActive = true;
+
     if (!totpSetup?.otpauth_url) {
-      return null;
+      setTotpQrDataUrl(null);
+      return undefined;
     }
-    const encoded = encodeURIComponent(totpSetup.otpauth_url);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encoded}`;
+
+    import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(totpSetup.otpauth_url, {
+          margin: 1,
+          width: 160,
+        })
+          .then((url) => {
+            if (isActive) {
+              setTotpQrDataUrl(url);
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to generate local QR code", error);
+            if (isActive) {
+              setTotpQrDataUrl(null);
+            }
+          })
+      )
+      .catch((error) => {
+        console.error("Failed to load QR code generator", error);
+        if (isActive) {
+          setTotpQrDataUrl(null);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [totpSetup?.otpauth_url]);
 
   const copyToClipboard = useCallback(async (value, description) => {
@@ -287,10 +319,10 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
                         Scan the QR code with your authenticator app. If you are unable to scan it, you can add the account manually using the secret below.
                       </p>
                     </div>
-                    {totpQrUrl ? (
+                    {totpQrDataUrl ? (
                       <div className="flex items-center justify-center">
                         <img
-                          src={totpQrUrl}
+                          src={totpQrDataUrl}
                           alt="Authenticator setup QR code"
                           className="h-40 w-40 rounded bg-white p-2 shadow-sm"
                         />
