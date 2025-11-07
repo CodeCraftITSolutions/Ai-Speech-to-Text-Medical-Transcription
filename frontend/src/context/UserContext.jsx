@@ -16,6 +16,7 @@ const normalizeUser = (user) => {
   const lastName = user.last_name ?? null;
   const phoneNumber = user.phone_number ?? null;
   const displayName = [firstName, lastName].filter(Boolean).join(" ") || user.username;
+  const totpEnabled = Boolean(user.totp_enabled);
 
   return {
     id: user.id,
@@ -27,6 +28,7 @@ const normalizeUser = (user) => {
     firstName,
     lastName,
     phoneNumber,
+    totpEnabled,
   };
 };
 
@@ -143,10 +145,10 @@ export const UserProvider = ({ children }) => {
   }, [refreshAccessToken, fetchCurrentUser, clearSession]);
 
   const login = useCallback(
-    async (username, password) => {
+    async (username, password, totpCode) => {
       setLoading(true);
       try {
-        const authResponse = await api.login(username, password);
+        const authResponse = await api.login(username, password, totpCode);
         if (!authResponse?.access_token) {
           throw new Error("No access token returned by server");
         }

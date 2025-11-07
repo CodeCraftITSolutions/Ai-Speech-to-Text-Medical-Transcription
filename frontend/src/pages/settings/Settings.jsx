@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   ConfigProvider,
+  Divider,
   Input,
   Select,
   Switch,
@@ -21,7 +22,13 @@ import {
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
 import { useUser } from "../../context/UserContext.jsx";
 import { useTheme } from "../../context/ThemeContext";
-import { updateCurrentUser } from "../../api/client";
+import {
+  changePassword,
+  disableTotp,
+  initiateTotpSetup,
+  updateCurrentUser,
+  verifyTotpSetup,
+} from "../../api/client";
 
 const { Option } = Select;
 
@@ -79,20 +86,271 @@ const ProfileCard = React.memo(function ProfileCard({
   );
 });
 
-const SecurityCard = React.memo(function SecurityCard() {
+const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refreshUser }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const [totpSetup, setTotpSetup] = useState(null);
+  const [totpCode, setTotpCode] = useState("");
+  const [totpBusy, setTotpBusy] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
+  const [disablingTotp, setDisablingTotp] = useState(false);
+
+  const copyToClipboard = useCallback(async (value, description) => {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      if (description) {
+        message.error("Clipboard access is not available in this browser.");
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      if (description) {
+        message.success(`${description} copied to clipboard.`);
+      }
+    } catch (error) {
+      console.error("Clipboard copy failed", error);
+      if (description) {
+        message.error(`Unable to copy ${description}.`);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    setTotpCode("");
+    if (user?.totpEnabled) {
+      setTotpSetup(null);
+      setDisablePassword("");
+    }
+  }, [user?.totpEnabled]);
+
+  const handlePasswordSubmit = useCallback(async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      message.error("Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      message.error("New password and confirmation do not match.");
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await callWithAuth(changePassword, {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      message.success("Password updated successfully.");
+    } catch (error) {
+      message.error(error?.message || "Unable to update password.");
+    } finally {
+      setChangingPassword(false);
+    }
+  }, [callWithAuth, currentPassword, newPassword, confirmPassword]);
+
+  const startTotpSetup = useCallback(async () => {
+    try {
+      setTotpBusy(true);
+      const setup = await callWithAuth(initiateTotpSetup);
+      setTotpSetup(setup);
+      setTotpCode("");
+      message.success("Authenticator setup generated. Copy the secret or open the setup link in your authenticator app.");
+    } catch (error) {
+      message.error(error?.message || "Unable to start two-factor setup.");
+    } finally {
+      setTotpBusy(false);
+    }
+  }, [callWithAuth]);
+
+  const verifyTotp = useCallback(async () => {
+    if (!totpSetup) {
+      message.error("Start the setup process before verifying.");
+      return;
+    }
+    if (!totpCode || totpCode.length < 6) {
+      message.error("Enter the 6-digit code from your authenticator app.");
+      return;
+    }
+
+    try {
+      setTotpBusy(true);
+      await callWithAuth(verifyTotpSetup, { code: totpCode });
+      await refreshUser();
+      setTotpSetup(null);
+      setTotpCode("");
+      message.success("Two-factor authentication enabled.");
+    } catch (error) {
+      message.error(error?.message || "Unable to verify the authentication code.");
+    } finally {
+      setTotpBusy(false);
+    }
+  }, [callWithAuth, totpSetup, totpCode, refreshUser]);
+
+  const disableTotpHandler = useCallback(async () => {
+    if (!disablePassword) {
+      message.error("Enter your password to disable two-factor authentication.");
+      return;
+    }
+
+    try {
+      setDisablingTotp(true);
+      await callWithAuth(disableTotp, { current_password: disablePassword });
+      await refreshUser();
+      setTotpSetup(null);
+      setTotpCode("");
+      setDisablePassword("");
+      message.success("Two-factor authentication disabled.");
+    } catch (error) {
+      message.error(error?.message || "Unable to disable two-factor authentication.");
+    } finally {
+      setDisablingTotp(false);
+    }
+  }, [callWithAuth, disablePassword, refreshUser]);
+
+  if (!user) {
+    return (
+      <Card title="Password & Security" extra={<Lock className="w-5 h-5" />}>
+        <p className="text-sm text-muted-foreground">
+          Sign in to manage your password and security preferences.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <Card title="Password & Security" extra={<Lock className="w-5 h-5" />}>
-      <Input.Password placeholder="Current Password" className="mt-2" />
-      <Input.Password placeholder="New Password" className="mt-4" />
-      <Input.Password placeholder="Confirm New Password" className="mt-4" />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-base font-semibold">Change Password</h3>
+          <p className="text-sm text-muted-foreground">
+            Use a strong, unique password to secure your account.
+          </p>
+          <Input.Password
+            placeholder="Current Password"
+            className="mt-3"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+          <Input.Password
+            placeholder="New Password"
+            className="mt-3"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <Input.Password
+            placeholder="Confirm New Password"
+            className="mt-3"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <Button
+            type="primary"
+            className="mt-3"
+            loading={changingPassword}
+            onClick={handlePasswordSubmit}
+          >
+            Update Password
+          </Button>
+        </div>
 
-      <div className="flex justify-between items-center mt-4">
-        <span>Two-Factor Authentication</span>
-        <Switch />
-      </div>
-      <div className="flex justify-between items-center mt-4">
-        <span>Login Notifications</span>
-        <Switch defaultChecked />
+        <Divider />
+
+        <div>
+          <h3 className="text-base font-semibold">Two-Factor Authentication</h3>
+          <p className="text-sm text-muted-foreground">
+            Add an extra layer of protection with a time-based authentication code.
+          </p>
+
+          {!user.totpEnabled ? (
+            <div className="mt-3 space-y-3">
+              {totpSetup ? (
+                <>
+                  <div className="space-y-2 rounded border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3">
+                    <p className="text-sm font-medium">Step 1. Add this account to your authenticator app.</p>
+                    <p className="text-xs text-muted-foreground">
+                      You can copy the secret below or paste the setup link into an authenticator that supports otpauth URLs.
+                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-1 font-mono text-sm break-all">
+                        {totpSetup.secret}
+                      </div>
+                      <Button
+                        size="small"
+                        onClick={() => copyToClipboard(totpSetup.secret, "Secret key")}
+                      >
+                        Copy Secret
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input value={totpSetup.otpauth_url} readOnly />
+                      <Button
+                        size="small"
+                        onClick={() => copyToClipboard(totpSetup.otpauth_url, "Setup link")}
+                      >
+                        Copy Link
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Step 2. After adding the account, enter the 6-digit code generated by your authenticator app.
+                  </p>
+                  <Input
+                    inputMode="numeric"
+                    pattern="\d*"
+                    maxLength={8}
+                    placeholder="Enter 6-digit code"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                  />
+                  <Button
+                    type="primary"
+                    onClick={verifyTotp}
+                    loading={totpBusy}
+                    disabled={totpBusy}
+                  >
+                    Verify & Enable
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={startTotpSetup} loading={totpBusy} disabled={totpBusy}>
+                  Enable Two-Factor Authentication
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Two-factor authentication is currently enabled on your account.
+              </p>
+              <Input.Password
+                placeholder="Confirm your password"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+              />
+              <Button
+                danger
+                onClick={disableTotpHandler}
+                loading={disablingTotp}
+                disabled={disablingTotp}
+              >
+                Disable Two-Factor Authentication
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <Divider />
+
+        <div className="flex justify-between items-center">
+          <span>Login Notifications</span>
+          <Switch defaultChecked />
+        </div>
       </div>
     </Card>
   );
@@ -333,7 +591,13 @@ export const Settings = () => {
       {
         key: "security",
         label: "Security",
-        children: <SecurityCard />,
+        children: (
+          <SecurityCard
+            user={user}
+            callWithAuth={callWithAuth}
+            refreshUser={refreshUser}
+          />
+        ),
       },
       {
         key: "audio",
@@ -367,6 +631,8 @@ export const Settings = () => {
       handlePhoneChange,
       toggleTheme,
       notifications,
+      callWithAuth,
+      refreshUser,
     ]
   );
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -25,6 +25,9 @@ class User(Base):
     phone_number: Optional[str] = Column(String(32), nullable=True)
     hashed_password: str = Column(String(255), nullable=False)
     role: str = Column(String(50), nullable=False, default=UserRole.ASSISTANT.value)
+    totp_secret: Optional[str] = Column(String(255), nullable=True)
+    totp_secret_pending: Optional[str] = Column(String(255), nullable=True)
+    totp_enabled: bool = Column(Boolean, nullable=False, default=False)
     created_at: datetime = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: datetime = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False

@@ -14,12 +14,17 @@ const buildHeaders = (token, extra = {}) => {
 const handleResponse = async (response) => {
   if (!response.ok) {
     let message = response.statusText;
+    let errorData = null;
     try {
-      const errorData = await response.json();
+      errorData = await response.json();
       if (errorData?.detail) {
-        message = Array.isArray(errorData.detail)
-          ? errorData.detail.map((item) => item.msg || item).join(", ")
-          : errorData.detail;
+        if (Array.isArray(errorData.detail)) {
+          message = errorData.detail.map((item) => item.msg || item).join(", ");
+        } else if (typeof errorData.detail === "object") {
+          message = errorData.detail.message || JSON.stringify(errorData.detail);
+        } else {
+          message = errorData.detail;
+        }
       } else if (errorData?.message) {
         message = errorData.message;
       }
@@ -29,6 +34,9 @@ const handleResponse = async (response) => {
     }
     const error = new Error(message || "Request failed");
     error.status = response.status;
+    if (errorData) {
+      error.body = errorData;
+    }
     throw error;
   }
 
@@ -43,7 +51,7 @@ const handleResponse = async (response) => {
   return response.text();
 };
 
-export const login = async (username, password) => {
+export const login = async (username, password, totpCode) => {
   const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
     method: "POST",
     headers: {
@@ -51,7 +59,11 @@ export const login = async (username, password) => {
       Accept: "application/json",
     },
     credentials: "include",
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(
+      totpCode
+        ? { username, password, totp_code: totpCode }
+        : { username, password }
+    ),
   });
 
   return handleResponse(response);
@@ -93,6 +105,49 @@ export const getCurrentUser = async (token) => {
 export const updateCurrentUser = async (token, payload) => {
   const response = await fetch(`${API_BASE_URL}/v1/users/me`, {
     method: "PATCH",
+    headers: buildHeaders(token, { "Content-Type": "application/json" }),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(response);
+};
+
+export const changePassword = async (token, payload) => {
+  const response = await fetch(`${API_BASE_URL}/v1/users/me/password`, {
+    method: "POST",
+    headers: buildHeaders(token, { "Content-Type": "application/json" }),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(response);
+};
+
+export const initiateTotpSetup = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/v1/users/me/totp/setup`, {
+    method: "POST",
+    headers: buildHeaders(token),
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+};
+
+export const verifyTotpSetup = async (token, payload) => {
+  const response = await fetch(`${API_BASE_URL}/v1/users/me/totp/verify`, {
+    method: "POST",
+    headers: buildHeaders(token, { "Content-Type": "application/json" }),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(response);
+};
+
+export const disableTotp = async (token, payload) => {
+  const response = await fetch(`${API_BASE_URL}/v1/users/me/totp/disable`, {
+    method: "POST",
     headers: buildHeaders(token, { "Content-Type": "application/json" }),
     credentials: "include",
     body: JSON.stringify(payload),
