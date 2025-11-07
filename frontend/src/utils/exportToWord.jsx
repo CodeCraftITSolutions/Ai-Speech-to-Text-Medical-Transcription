@@ -1,13 +1,21 @@
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
 
-const exportToWord = (
+const getSafeValue = (value) =>
+  value === undefined || value === null || value === "" ? "N/A" : value;
+
+const exportToWord = ({
   patientName,
   patientId,
   dateOfBirth,
   specialty,
-  transcript
-) => {
+  transcript,
+} = {}) => {
+  const transcriptLines = getSafeValue(transcript)
+    .toString()
+    .split(/\r?\n/)
+    .map((line) => new Paragraph(line || ""));
+
   const doc = new Document({
     sections: [
       {
@@ -22,15 +30,15 @@ const exportToWord = (
               }),
             ],
           }),
-          new Paragraph(`Patient Name: ${patientName}`),
-          new Paragraph(`Patient ID: ${patientId}`),
-          new Paragraph(`Date of Birth: ${dateOfBirth}`),
-          new Paragraph(`Specialty: ${specialty}`),
+          new Paragraph(`Patient Name: ${getSafeValue(patientName)}`),
+          new Paragraph(`Patient ID: ${getSafeValue(patientId)}`),
+          new Paragraph(`Date of Birth: ${getSafeValue(dateOfBirth)}`),
+          new Paragraph(`Specialty: ${getSafeValue(specialty)}`),
           new Paragraph({ text: "" }), // spacer
           new Paragraph({
             children: [new TextRun({ text: "Transcript:", bold: true })],
           }),
-          new Paragraph(transcript || ""), // handle empty transcript
+          ...transcriptLines,
         ],
       },
     ],
