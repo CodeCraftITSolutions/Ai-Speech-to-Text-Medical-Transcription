@@ -1,49 +1,69 @@
-import { Button, Card, Table, Tag, message } from "antd";
+import { Button, Card, Select, Table, Tag } from "antd";
 import { Calendar, Download, RefreshCcw } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useUser } from "../../context/UserContext.jsx";
-import { listJobs } from "../../api/client";
+import React, { useMemo, useState } from "react";
+
+import useJobsData from "../../hooks/useJobsData.js";
+
+const normaliseStatus = (status) =>
+  typeof status === "string" ? status.toLowerCase() : "";
+
+const formatStatus = (status) => {
+  const value = normaliseStatus(status);
+  if (!value) {
+    return "Unknown";
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const statusColor = (status) => {
+  switch (normaliseStatus(status)) {
+    case "completed":
+      return "green";
+    case "processing":
+      return "blue";
+    case "failed":
+      return "red";
+    default:
+      return "gold";
+  }
+};
 
 export const History = () => {
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const { callWithAuth, isAuthenticated } = useUser();
+  const { jobs, loading, stats, lastUpdated, refresh, statusBreakdown } =
+    useJobsData();
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const fetchJobs = useCallback(async () => {
-    if (!isAuthenticated) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await callWithAuth(listJobs);
-      setJobs(Array.isArray(response) ? response : []);
-    } catch (error) {
-      message.error(error?.message ?? "Unable to load jobs");
-    } finally {
-      setLoading(false);
-    }
-  }, [callWithAuth, isAuthenticated]);
+  const statusOptions = useMemo(() => {
+    const options = [
+      { value: "all", label: "All statuses" },
+      { value: "completed", label: "Completed" },
+      { value: "processing", label: "Processing" },
+      { value: "pending", label: "Pending" },
+      { value: "failed", label: "Failed" },
+    ];
 
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    const hasUnknown = Array.from(statusBreakdown.keys()).some(
+      (status) => !options.find((option) => option.value === status)
+    );
 
-  const statusColor = useCallback((status) => {
-    switch (status) {
-      case "completed":
-        return "green";
-      case "processing":
-        return "blue";
-      case "failed":
-        return "red";
-      default:
-        return "gold";
+    return hasUnknown
+      ? [...options, { value: "unknown", label: "Unknown" }]
+      : options;
+  }, [statusBreakdown]);
+
+  const filteredJobs = useMemo(() => {
+    if (statusFilter === "all") {
+      return jobs;
     }
-  }, []);
+    const normalised = statusFilter.toLowerCase();
+    return jobs.filter(
+      (job) => normaliseStatus(job.status) === normalised || (!job.status && normalised === "unknown")
+    );
+  }, [jobs, statusFilter]);
 
   const tableData = useMemo(
     () =>
-      jobs.map((job) => ({
+      filteredJobs.map((job) => ({
         key: job.id,
         id: job.id,
         type: job.type,
@@ -53,41 +73,42 @@ export const History = () => {
         created_at: job.created_at,
         updated_at: job.updated_at,
       })),
-    [jobs]
+    [filteredJobs]
   );
 
   const columns = [
     {
-      title: "Job ID",
+      title: "Job",
       dataIndex: "id",
       key: "id",
-      width: 100,
-    },
-    {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-      render: (value) => value ?? "—",
+      render: (value, record) => (
+        <div>
+          <div className="font-medium text-foreground">#{value}</div>
+          <div className="text-sm text-muted-foreground">
+            {record.type ?? "Transcription"}
+          </div>
+        </div>
+      ),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+      render: (status) => (
+        <Tag color={statusColor(status)}>{formatStatus(status)}</Tag>
+      ),
     },
     {
       title: "Created",
       dataIndex: "created_at",
       key: "created_at",
-      render: (date) =>
-        date ? new Date(date).toLocaleString() : "—",
+      render: (date) => (date ? new Date(date).toLocaleString() : "—"),
     },
     {
       title: "Updated",
       dataIndex: "updated_at",
       key: "updated_at",
-      render: (date) =>
-        date ? new Date(date).toLocaleString() : "—",
+      render: (date) => (date ? new Date(date).toLocaleString() : "—"),
     },
     {
       title: "Input",
@@ -118,34 +139,70 @@ export const History = () => {
     },
   ];
 
+  const lastUpdatedLabel = lastUpdated
+    ? lastUpdated.toLocaleString()
+    : "Never";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Transcription Jobs</h1>
-          <p className="text-muted-foreground">Track the status of submitted transcription jobs.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            Transcription Jobs
+          </h1>
+          <p className="text-muted-foreground">
+            Track the status of submitted transcription jobs.
+          </p>
         </div>
-        <Button icon={<RefreshCcw size={16} />} onClick={fetchJobs} loading={loading}>
-          Refresh
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select
+            value={statusFilter}
+            options={statusOptions}
+            onChange={setStatusFilter}
+            className="min-w-[160px]"
+          />
+          <Button
+            icon={<RefreshCcw size={16} />}
+            onClick={refresh}
+            loading={loading}
+          >
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border" title="Total Jobs">
-          <div className="text-2xl font-semibold text-foreground">{jobs.length}</div>
-          <p className="text-xs text-muted-foreground">Submitted to the processing queue</p>
+          <div className="text-2xl font-semibold text-foreground">
+            {stats.total}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Submitted to the processing queue
+          </p>
+        </Card>
+        <Card className="bg-card border-border" title="In Queue">
+          <div className="text-2xl font-semibold text-foreground">
+            {stats.inQueue}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pending or processing
+          </p>
         </Card>
         <Card className="bg-card border-border" title="Completed">
           <div className="text-2xl font-semibold text-foreground">
-            {jobs.filter((job) => job.status === "completed").length}
+            {stats.completed}
           </div>
-          <p className="text-xs text-muted-foreground">Jobs with available transcripts</p>
+          <p className="text-xs text-muted-foreground">
+            Jobs with available transcripts
+          </p>
         </Card>
-        <Card className="bg-card border-border" title="Pending">
+        <Card className="bg-card border-border" title="Failed">
           <div className="text-2xl font-semibold text-foreground">
-            {jobs.filter((job) => job.status !== "completed" && job.status !== "failed").length}
+            {stats.failed}
           </div>
-          <p className="text-xs text-muted-foreground">Awaiting processing</p>
+          <p className="text-xs text-muted-foreground">
+            Requires attention
+          </p>
         </Card>
       </div>
 
@@ -156,7 +213,7 @@ export const History = () => {
             <span className="text-foreground">Job History</span>
             <span className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar size={14} />
-              Updated {new Date().toLocaleString()}
+              Updated {lastUpdatedLabel}
             </span>
           </div>
         }
@@ -167,7 +224,9 @@ export const History = () => {
           loading={loading}
           pagination={{ pageSize: 10 }}
           scroll={{ x: 768 }}
-          locale={{ emptyText: loading ? "Loading jobs..." : "No jobs available" }}
+          locale={{
+            emptyText: loading ? "Loading jobs..." : "No jobs available",
+          }}
         />
       </Card>
     </div>

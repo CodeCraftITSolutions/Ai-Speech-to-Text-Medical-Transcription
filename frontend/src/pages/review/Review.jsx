@@ -1,194 +1,246 @@
-import { Badge, Button, Card, Input, Table, ConfigProvider } from "antd";
-import { CheckCircle, Clock, FileText, MessageSquare } from "lucide-react";
-import React, { useState } from "react";
+import {
+  Button,
+  Card,
+  ConfigProvider,
+  Input,
+  Table,
+  Tag,
+  message,
+} from "antd";
+import {
+  CheckCircle,
+  Clock,
+  FileText,
+  MessageSquare,
+  RefreshCcw,
+} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+
+import useJobsData from "../../hooks/useJobsData.js";
 import { useTheme } from "../../context/ThemeContext";
 
 const { TextArea } = Input;
 
+const normaliseStatus = (status) =>
+  typeof status === "string" ? status.toLowerCase() : "";
+
+const formatStatus = (status) => {
+  const value = normaliseStatus(status);
+  if (!value) {
+    return "Unknown";
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const statusColor = (status) => {
+  switch (normaliseStatus(status)) {
+    case "completed":
+      return "green";
+    case "processing":
+      return "blue";
+    case "failed":
+      return "red";
+    default:
+      return "gold";
+  }
+};
+
+const getJobTimestamp = (job) => job.updated_at ?? job.created_at;
+
 export const Review = () => {
-  const [selectedTranscription, setSelectedTranscription] = useState(null);
-  const [reviewComment, setReviewComment] = useState("");
   const { theme } = useTheme();
+  const { jobs, loading, stats, refresh } = useJobsData();
+  const [selectedJobId, setSelectedJobId] = useState(null);
+  const [reviewComment, setReviewComment] = useState("");
+  const [transcriptNotes, setTranscriptNotes] = useState("");
 
-  const pendingReviews = [
-    {
-      id: "T002",
-      patientName: "Emily Davis",
-      patientId: "P12346",
-      doctor: "Dr. Sarah Johnson",
-      date: "2024-01-14",
-      specialty: "Cardiology",
-      duration: "08:22",
-      wordCount: 324,
-      priority: "High",
-      transcript:
-        "Patient presents with chest pain and shortness of breath. Blood pressure is 140 over 90. Heart rate is regular at 72 beats per minute. Lungs are clear to auscultation bilaterally. No murmurs, rubs, or gallops appreciated. Recommend ECG and chest X-ray.",
-    },
-    {
-      id: "T006",
-      patientName: "Robert Johnson",
-      patientId: "P12350",
-      doctor: "Dr. Michael Chen",
-      date: "2024-01-14",
-      specialty: "Neurology",
-      duration: "15:30",
-      wordCount: 567,
-      priority: "Medium",
-      transcript:
-        "Patient complains of headaches and dizziness for the past week. Neurological examination shows normal reflexes. No focal deficits noted. Blood pressure within normal limits. Recommend MRI brain and follow-up in two weeks.",
-    },
-    {
-      id: "T007",
-      patientName: "Lisa Anderson",
-      patientId: "P12351",
-      doctor: "Dr. Jennifer Lee",
-      date: "2024-01-13",
-      specialty: "Orthopedics",
-      duration: "12:45",
-      wordCount: 445,
-      priority: "Low",
-      transcript:
-        "Patient presents with knee pain after fall. Physical examination reveals swelling and tenderness over the lateral aspect of the right knee. Range of motion is limited due to pain. X-rays show no fracture. Recommend rest, ice, and anti-inflammatory medication.",
-    },
-  ];
+  const queueJobs = useMemo(
+    () =>
+      jobs.filter((job) => {
+        const status = normaliseStatus(job.status);
+        return status === "completed" || status === "processing" || status === "pending";
+      }),
+    [jobs]
+  );
 
-  const getPriorityBadge = (priority) => {
-    switch (priority) {
-      case "High":
-        return <Badge color="red" text="High" />;
-      case "Medium":
-        return <Badge color="orange" text="Medium" />;
-      case "Low":
-        return <Badge color="green" text="Low" />;
-      default:
-        return <Badge text={priority} />;
-    }
-  };
+  const readyForReview = useMemo(
+    () => queueJobs.filter((job) => normaliseStatus(job.status) === "completed"),
+    [queueJobs]
+  );
 
-  const approveTranscription = (id) => {
-    alert(`Transcription ${id} approved and finalized!`);
-    setSelectedTranscription(null);
-  };
+  const inProgress = useMemo(
+    () => queueJobs.filter((job) => normaliseStatus(job.status) !== "completed"),
+    [queueJobs]
+  );
 
-  const requestChanges = (id) => {
-    if (reviewComment.trim()) {
-      alert(`Change request sent for transcription ${id}`);
-      setSelectedTranscription(null);
-      setReviewComment("");
-    } else {
-      alert("Please add a comment explaining the required changes.");
-    }
-  };
+  const completedToday = useMemo(() => {
+    const today = new Date().toDateString();
+    return jobs.filter((job) => {
+      if (normaliseStatus(job.status) !== "completed") {
+        return false;
+      }
+      const timestamp = getJobTimestamp(job);
+      if (!timestamp) {
+        return false;
+      }
+      const jobDate = new Date(timestamp);
+      if (Number.isNaN(jobDate.getTime())) {
+        return false;
+      }
+      return jobDate.toDateString() === today;
+    });
+  }, [jobs]);
+
+  const selectedJob = useMemo(
+    () => queueJobs.find((job) => job.id === selectedJobId) ?? null,
+    [queueJobs, selectedJobId]
+  );
+
+  useEffect(() => {
+    setReviewComment("");
+    setTranscriptNotes("");
+  }, [selectedJobId]);
 
   const columns = [
     {
-      title: "Patient",
-      dataIndex: "patientName",
-      key: "patientName",
-      render: (_, record) => (
+      title: "Job",
+      dataIndex: "id",
+      key: "id",
+      render: (_, job) => (
         <div>
-          <div className="font-medium">{record.patientName}</div>
-          <div className="text-sm text-gray-500">{record.patientId}</div>
+          <div className="font-medium text-foreground">#{job.id}</div>
+          <div className="text-sm text-muted-foreground">
+            {job.type ?? "Transcription"}
+          </div>
         </div>
       ),
     },
     {
-      title: "Doctor",
-      dataIndex: "doctor",
-      key: "doctor",
-      render: (_, record) => (
-        <div>
-          <div className="font-medium">{record.doctor}</div>
-          <div className="text-sm text-gray-500">{record.specialty}</div>
-        </div>
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => (
+        <Tag color={statusColor(status)}>{formatStatus(status)}</Tag>
       ),
     },
     {
-      title: "Priority",
-      dataIndex: "priority",
-      key: "priority",
-      render: (priority) => getPriorityBadge(priority),
+      title: "Updated",
+      dataIndex: "updated_at",
+      key: "updated_at",
+      render: (value, job) => {
+        const timestamp = value ?? job.created_at;
+        return timestamp ? new Date(timestamp).toLocaleString() : "—";
+      },
     },
     {
       title: "Action",
       key: "action",
-      render: (_, record) => (
-        <Button size="small" onClick={() => setSelectedTranscription(record)}>
+      render: (_, job) => (
+        <Button size="small" onClick={() => setSelectedJobId(job.id)}>
           Review
         </Button>
       ),
     },
   ];
 
+  const approveJob = () => {
+    if (!selectedJob) {
+      return;
+    }
+    message.success(`Job #${selectedJob.id} approved for delivery.`);
+    setSelectedJobId(null);
+  };
+
+  const requestChanges = () => {
+    if (!selectedJob) {
+      return;
+    }
+    if (!reviewComment.trim()) {
+      message.warning("Please add review comments before requesting changes.");
+      return;
+    }
+    message.success(`Change request submitted for job #${selectedJob.id}.`);
+    setSelectedJobId(null);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">
             Review Queue
           </h1>
           <p className="text-muted-foreground">
-            Review and approve pending transcriptions
+            Review and approve pending transcription jobs.
           </p>
         </div>
+        <Button
+          icon={<RefreshCcw size={16} />}
+          onClick={refresh}
+          loading={loading}
+        >
+          Refresh
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card
           className="bg-card border-border"
           title={
             <div className="flex items-center justify-between bg-card border-border">
-              <h3 className=" text-foreground">Pending Reviews</h3>
+              <h3 className="text-foreground">Pending Reviews</h3>
               <Clock className="h-4 w-4 text-orange-600" />
             </div>
           }
         >
           <div className="text-2xl font-bold text-foreground">
-            {pendingReviews.length}
+            {readyForReview.length}
           </div>
-          <p className="text-xs text-muted-foreground">Awaiting review</p>
+          <p className="text-xs text-muted-foreground">Awaiting reviewer</p>
         </Card>
 
         <Card
           className="bg-card border-border"
           title={
             <div className="flex items-center justify-between bg-card border-border">
-              <h3 className="text-foreground">High Priority</h3>
-              <Clock className="h-4 w-4 text-red-600" />
-            </div>
-          }
-        >
-          <div className="text-2xl font-bold text-foreground">
-            {pendingReviews.filter((r) => r.priority === "High").length}
-          </div>
-          <p className="text-xs text-muted-foreground">Urgent reviews</p>
-        </Card>
-
-        <Card
-          className="bg-card border-border"
-          title={
-            <div className="flex items-center justify-between bg-card border-border">
-              <h3 className=" text-foreground">Completed Today</h3>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </div>
-          }
-        >
-          <div className="text-2xl font-bold text-foreground">15</div>
-          <p className="text-xs text-muted-foreground">Reviews completed</p>
-        </Card>
-
-        {/* <Card
-          className="bg-card border-border"
-          title={
-            <div className="flex items-center justify-between bg-card border-border">
-              <h3 className=" text-foreground">Average Time</h3>
+              <h3 className="text-foreground">In Progress</h3>
               <Clock className="h-4 w-4 text-blue-600" />
             </div>
           }
         >
-          <div className="text-2xl font-bold text-foreground">12m</div>
-          <p className="text-xs text-muted-foreground">Per review</p>
-        </Card> */}
+          <div className="text-2xl font-bold text-foreground">
+            {inProgress.length}
+          </div>
+          <p className="text-xs text-muted-foreground">Jobs still processing</p>
+        </Card>
+
+        <Card
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className="text-foreground">Completed Today</h3>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </div>
+          }
+        >
+          <div className="text-2xl font-bold text-foreground">
+            {completedToday.length}
+          </div>
+          <p className="text-xs text-muted-foreground">Ready for quality check</p>
+        </Card>
+
+        <Card
+          className="bg-card border-border"
+          title={
+            <div className="flex items-center justify-between bg-card border-border">
+              <h3 className="text-foreground">Failed Jobs</h3>
+              <FileText className="h-4 w-4 text-red-600" />
+            </div>
+          }
+        >
+          <div className="text-2xl font-bold text-foreground">{stats.failed}</div>
+          <p className="text-xs text-muted-foreground">Needs follow-up</p>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -196,8 +248,10 @@ export const Review = () => {
           className="bg-card border-border overflow-x-auto md:min-w-[410px]"
           title={
             <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-card border-border">
-              <h3 className=" text-foreground">Pending Reviews</h3>
-              <p className="text-muted-foreground text-sm">{`${pendingReviews.length} transcriptions awaiting review`}</p>
+              <h3 className="text-foreground">Pending Reviews</h3>
+              <p className="text-muted-foreground text-sm">
+                {`${queueJobs.length} jobs awaiting review`}
+              </p>
             </div>
           }
         >
@@ -216,10 +270,16 @@ export const Review = () => {
           >
             <Table
               columns={columns}
-              dataSource={pendingReviews}
+              dataSource={queueJobs}
               rowKey="id"
+              loading={loading}
               pagination={false}
               className="w-[700px] sm:w-full"
+              locale={{
+                emptyText: loading
+                  ? "Loading jobs..."
+                  : "No jobs currently awaiting review",
+              }}
             />
           </ConfigProvider>
         </Card>
@@ -236,69 +296,75 @@ export const Review = () => {
             className="bg-card border-border"
             title={
               <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-card border-border">
-                <h3 className=" text-foreground">Review Editor</h3>
+                <h3 className="text-foreground">Review Workspace</h3>
                 <p className="text-muted-foreground text-sm">
-                  {selectedTranscription
-                    ? `Reviewing: ${selectedTranscription.patientName}`
-                    : "Select a transcription to review"}
+                  {selectedJob
+                    ? `Reviewing job #${selectedJob.id}`
+                    : "Select a job to begin"}
                 </p>
               </div>
             }
           >
-            {selectedTranscription ? (
+            {selectedJob ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 sm:p-4 bg-background rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:p-4 bg-background rounded-lg">
                   <div>
-                    <div className="text-sm font-medium text-foreground">
-                      Patient
-                    </div>
+                    <div className="text-sm font-medium text-foreground">Job ID</div>
+                    <div className="text-muted-foreground">#{selectedJob.id}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-foreground">Status</div>
+                    <Tag color={statusColor(selectedJob.status)}>
+                      {formatStatus(selectedJob.status)}
+                    </Tag>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-foreground">Type</div>
                     <div className="text-muted-foreground">
-                      {selectedTranscription.patientName}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {selectedTranscription.patientId}
+                      {selectedJob.type ?? "Transcription"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-foreground">
-                      Doctor
-                    </div>
+                    <div className="text-sm font-medium text-foreground">Updated</div>
                     <div className="text-muted-foreground">
-                      {selectedTranscription.doctor}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {selectedTranscription.specialty}
+                      {(() => {
+                        const timestamp = getJobTimestamp(selectedJob);
+                        return timestamp
+                          ? new Date(timestamp).toLocaleString()
+                          : "—";
+                      })()}
                     </div>
                   </div>
-                  <div>
+                  <div className="sm:col-span-2">
                     <div className="text-sm font-medium text-foreground">
-                      Date
+                      Output
                     </div>
-                    <div className="text-muted-foreground">
-                      {new Date(
-                        selectedTranscription.date
-                      ).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-foreground">
-                      Duration
-                    </div>
-                    <div className="text-muted-foreground">
-                      {selectedTranscription.duration}
-                    </div>
+                    {selectedJob.output_uri ? (
+                      <Button
+                        type="link"
+                        href={selectedJob.output_uri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-0"
+                      >
+                        Open transcription output
+                      </Button>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Output not yet available for this job.
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">
-                    Transcript
+                    Transcript Notes
                   </label>
                   <ConfigProvider
                     theme={{
                       token: {
-                        colorBgContainer:
-                          theme === "dark" ? "#1f1f1f" : "#ffffff",
+                        colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
                         colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
                         colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
                         colorTextPlaceholder:
@@ -311,14 +377,10 @@ export const Review = () => {
                     }}
                   >
                     <TextArea
-                      rows={8}
-                      value={selectedTranscription.transcript}
-                      onChange={(e) =>
-                        setSelectedTranscription({
-                          ...selectedTranscription,
-                          transcript: e.target.value,
-                        })
-                      }
+                      rows={6}
+                      placeholder="Document any corrections or observations..."
+                      value={transcriptNotes}
+                      onChange={(e) => setTranscriptNotes(e.target.value)}
                     />
                   </ConfigProvider>
                 </div>
@@ -330,8 +392,7 @@ export const Review = () => {
                   <ConfigProvider
                     theme={{
                       token: {
-                        colorBgContainer:
-                          theme === "dark" ? "#1f1f1f" : "#ffffff",
+                        colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
                         colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
                         colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
                         colorTextPlaceholder:
@@ -345,7 +406,7 @@ export const Review = () => {
                   >
                     <TextArea
                       rows={4}
-                      placeholder="Add comments or notes for the doctor..."
+                      placeholder="Add comments or instructions for the requester..."
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                     />
@@ -355,18 +416,18 @@ export const Review = () => {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     type="primary"
-                    onClick={() =>
-                      approveTranscription(selectedTranscription.id)
-                    }
+                    onClick={approveJob}
                     className="flex-1"
                     icon={<CheckCircle className="w-4 h-4 mr-2" />}
+                    disabled={loading}
                   >
-                    Approve & Finalize
+                    Approve for Delivery
                   </Button>
                   <Button
-                    onClick={() => requestChanges(selectedTranscription.id)}
+                    onClick={requestChanges}
                     className="flex-1"
                     icon={<MessageSquare className="w-4 h-4 mr-2" />}
+                    disabled={loading}
                   >
                     Request Changes
                   </Button>
@@ -376,7 +437,7 @@ export const Review = () => {
               <div className="text-center py-12 text-gray-500">
                 <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">
-                  Select a transcription from the queue to begin reviewing
+                  Select a transcription job from the queue to begin reviewing.
                 </p>
               </div>
             )}
