@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -45,6 +45,16 @@ class UserRead(UserBase):
     created_at: datetime
     updated_at: datetime
     totp_enabled: bool = False
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserListItem(BaseModel):
+    id: int
+    username: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -101,6 +111,43 @@ class ReportRead(BaseModel):
     format: str
     output_uri: str
     created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PatientBase(BaseModel):
+    patient_identifier: str = Field(min_length=1)
+    patient_name: str = Field(min_length=1)
+    patient_date_of_birth: Optional[date] = None
+
+
+class PatientCreate(PatientBase):
+    pass
+
+
+class PatientRead(PatientBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TranscriptionBase(BaseModel):
+    doctor_specialty: Optional[str] = None
+    transcript_text: str = Field(min_length=1)
+    receptionist_id: Optional[int] = None
+
+
+class TranscriptionCreate(TranscriptionBase, PatientBase):
+    pass
+
+
+class TranscriptionRead(TranscriptionBase):
+    id: int
+    patient: PatientRead
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

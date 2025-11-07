@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -14,6 +15,14 @@ class UserRepository:
 
     def get(self, user_id: int) -> Optional[models.User]:
         return self.db.query(models.User).filter(models.User.id == user_id).first()
+
+    def list_by_role(self, role: str):
+        return (
+            self.db.query(models.User)
+            .filter(models.User.role == role)
+            .order_by(models.User.created_at.asc())
+            .all()
+        )
 
     def create(self, username: str, hashed_password: str, role: str) -> models.User:
         user = models.User(username=username, hashed_password=hashed_password, role=role)
@@ -80,4 +89,64 @@ class ReportRepository:
 
     def get(self, report_id: int) -> Optional[models.Report]:
         return self.db.query(models.Report).filter(models.Report.id == report_id).first()
+
+
+class PatientRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_by_identifier(self, identifier: str) -> Optional[models.Patient]:
+        return (
+            self.db.query(models.Patient)
+            .filter(models.Patient.patient_identifier == identifier)
+            .first()
+        )
+
+    def create(
+        self,
+        *,
+        patient_identifier: str,
+        patient_name: str,
+        patient_date_of_birth: Optional[date] = None,
+    ):
+        patient = models.Patient(
+            patient_identifier=patient_identifier,
+            patient_name=patient_name,
+            patient_date_of_birth=patient_date_of_birth,
+        )
+        self.db.add(patient)
+        self.db.commit()
+        self.db.refresh(patient)
+        return patient
+
+    def update(self, patient: models.Patient, **data) -> models.Patient:
+        for field, value in data.items():
+            setattr(patient, field, value)
+        self.db.commit()
+        self.db.refresh(patient)
+        return patient
+
+
+class TranscriptionRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create(
+        self,
+        *,
+        patient_id: int,
+        doctor_specialty: Optional[str],
+        transcript_text: str,
+        receptionist_id: Optional[int],
+    ) -> models.Transcription:
+        transcription = models.Transcription(
+            patient_id=patient_id,
+            doctor_specialty=doctor_specialty,
+            transcript_text=transcript_text,
+            receptionist_id=receptionist_id,
+        )
+        self.db.add(transcription)
+        self.db.commit()
+        self.db.refresh(transcription)
+        return transcription
 

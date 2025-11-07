@@ -9,6 +9,7 @@ from app.api.v1 import (
     routes_health,
     routes_jobs,
     routes_reports,
+    routes_transcriptions,
     routes_transcribe,
     routes_users,
 )
@@ -34,6 +35,7 @@ app.include_router(routes_health.router)
 app.include_router(routes_auth.router)
 app.include_router(routes_jobs.router)
 app.include_router(routes_reports.router)
+app.include_router(routes_transcriptions.router)
 app.include_router(routes_transcribe.router)
 app.include_router(routes_users.router)
 

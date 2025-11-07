@@ -22,10 +22,12 @@ import {
   Play,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useUser } from "../../context/UserContext.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import exportToPdf from "../../utils/exportToPdf.jsx";
 import exportToWord from "../../utils/exportToWord.jsx";
 import useSpeechToText from "../../hooks/useSpeechToText.js";
+import { createTranscription, listReceptionists } from "../../api/client.js";
 
 const { Option } = Select;
 
@@ -42,8 +44,13 @@ export const NewTranscription = () => {
   const [sendToTranscriptionist, setSendToTranscriptionist] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [receptionistId, setReceptionistId] = useState(null);
+  const [receptionists, setReceptionists] = useState([]);
+  const [loadingReceptionists, setLoadingReceptionists] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { theme } = useTheme();
+  const { callWithAuth } = useUser();
 
   const {
     supported: speechSupported,
@@ -162,6 +169,41 @@ export const NewTranscription = () => {
       audioStreamRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    setLoadingReceptionists(true);
+    callWithAuth(listReceptionists)
+      .then((data) => {
+        if (!active) {
+          return;
+        }
+        if (Array.isArray(data)) {
+          setReceptionists(data);
+        } else {
+          setReceptionists([]);
+        }
+      })
+      .catch((error) => {
+        if (!active) {
+          return;
+        }
+        if (!error?.status || (error.status !== 401 && error.status !== 403)) {
+          message.error(error?.message || "Failed to load receptionists");
+        }
+        setReceptionists([]);
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingReceptionists(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [callWithAuth]);
 
   useEffect(() => {
     if (isRecording && !isPaused) {
@@ -329,7 +371,7 @@ export const NewTranscription = () => {
     message.success("Transcript confirmed from the latest recording");
   };
 
-  const finalizeTranscription = () => {
+  const finalizeTranscription = async () => {
     const normalizedTranscript = (transcript ?? "").trim();
 
     if (normalizedTranscript.length === 0) {
@@ -337,11 +379,35 @@ export const NewTranscription = () => {
       return;
     }
 
-    message.success(
-      sendToTranscriptionist
-        ? "Transcription ready for review"
-        : "Transcription finalized locally"
-    );
+    if (!patientName.trim() || !patientId.trim()) {
+      message.warning("Patient name and ID are required to save the transcription");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await callWithAuth(createTranscription, {
+        patient_identifier: patientId.trim(),
+        patient_name: patientName.trim(),
+        patient_date_of_birth: dateOfBirth || null,
+        doctor_specialty: specialty ? specialty.trim() : null,
+        transcript_text: normalizedTranscript,
+        receptionist_id: receptionistId ?? null,
+      });
+
+      message.success(
+        sendToTranscriptionist
+          ? "Transcription saved and ready for review"
+          : "Transcription saved successfully"
+      );
+    } catch (error) {
+      message.error(error?.message || "Failed to save transcription");
+      return;
+    } finally {
+      setIsSaving(false);
+    }
+
   };
 
   return (
@@ -369,6 +435,7 @@ export const NewTranscription = () => {
             type="primary"
             icon={<Send />}
             className="text-xs"
+            loading={isSaving}
           >
             {sendToTranscriptionist ? "Send to Review" : "Finalize"}
           </Button>
@@ -507,6 +574,49 @@ export const NewTranscription = () => {
                   <Option value="internal-medicine">Internal Medicine</Option>
                   <Option value="pediatrics">Pediatrics</Option>
                   <Option value="surgery">Surgery</Option>
+                </Select>
+              </ConfigProvider>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <p className="text-muted-foreground font-medium" htmlFor="receptionist">
+                Receptionist
+              </p>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
+                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
+                    colorTextPlaceholder:
+                      theme === "dark" ? "#888888" : "#bfbfbf",
+                    selectorBg: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                    optionActiveBg: theme === "dark" ? "#bfbfbf" : "#bfbfbf",
+                    colorBgElevated: theme === "dark" ? "#1f1f1f" : "#ffffff",
+                  },
+                }}
+              >
+                <Select
+                  allowClear
+                  id="receptionist"
+                  placeholder="Select receptionist"
+                  value={receptionistId ?? undefined}
+                  onChange={(value) => setReceptionistId(value ?? null)}
+                  loading={loadingReceptionists}
+                  notFoundContent={
+                    loadingReceptionists ? "Loading..." : "No receptionists available"
+                  }
+                  style={{ width: "100%" }}
+                >
+                  {receptionists.map((user) => {
+                    const parts = [user.first_name, user.last_name].filter(Boolean);
+                    const label = parts.length > 0 ? parts.join(" ") : user.username;
+                    return (
+                      <Option key={user.id} value={user.id}>
+                        {label}
+                      </Option>
+                    );
+                  })}
                 </Select>
               </ConfigProvider>
             </div>

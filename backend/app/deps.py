@@ -3,7 +3,13 @@ from functools import lru_cache
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.domain.repositories import JobRepository, ReportRepository, UserRepository
+from app.domain.repositories import (
+    JobRepository,
+    PatientRepository,
+    ReportRepository,
+    TranscriptionRepository,
+    UserRepository,
+)
 from app.infra.db import get_db
 from app.services.asr.whisper_service import WhisperService
 from app.settings import Settings, get_settings
@@ -23,6 +29,16 @@ def get_job_repository(db: Session = Depends(get_db)) -> JobRepository:
 
 def get_report_repository(db: Session = Depends(get_db)) -> ReportRepository:
     return ReportRepository(db)
+
+
+def get_patient_repository(db: Session = Depends(get_db)) -> PatientRepository:
+    return PatientRepository(db)
+
+
+def get_transcription_repository(
+    db: Session = Depends(get_db),
+) -> TranscriptionRepository:
+    return TranscriptionRepository(db)
 
 
 @lru_cache(maxsize=1)

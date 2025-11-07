@@ -203,6 +203,27 @@ export const logout = async () => {
   return handleResponse(response);
 };
 
+export const listReceptionists = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/v1/users/receptionists`, {
+    method: "GET",
+    headers: buildHeaders(token),
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+};
+
+export const createTranscription = async (token, payload) => {
+  const response = await fetch(`${API_BASE_URL}/v1/transcriptions`, {
+    method: "POST",
+    headers: buildHeaders(token, { "Content-Type": "application/json" }),
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(response);
+};
+
 export const apiConfig = {
   API_BASE_URL,
 };

@@ -2,11 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.domain import repositories, schemas
+from app.domain.models import UserRole
 from app.infra import auth
 from app.infra.db import get_db
 from app.services import totp as totp_service
 
 router = APIRouter(prefix="/v1/users", tags=["users"])
+
+
+@router.get("/receptionists", response_model=list[schemas.UserListItem])
+def list_receptionists(
+    db: Session = Depends(get_db),
+    _: object = Depends(auth.require_roles(UserRole.DOCTOR, UserRole.ADMIN)),
+) -> list[schemas.UserListItem]:
+    user_repo = repositories.UserRepository(db)
+    receptionists = user_repo.list_by_role(UserRole.RECEPTIONIST.value)
+    return [schemas.UserListItem.model_validate(user) for user in receptionists]
 
 
 @router.patch("/me", response_model=schemas.UserRead)
