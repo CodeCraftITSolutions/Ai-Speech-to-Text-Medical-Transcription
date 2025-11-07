@@ -20,7 +20,7 @@ import {
   Pause,
   Play,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import exportToPdf from "../../utils/exportToPdf.jsx";
 import exportToWord from "../../utils/exportToWord.jsx";
@@ -44,6 +44,7 @@ export const NewTranscription = () => {
   const [audioFile, setAudioFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
 
   const { theme } = useTheme();
   const { callWithAuth, isAuthenticated } = useUser();
@@ -51,93 +52,302 @@ export const NewTranscription = () => {
   const intervalRef = useRef();
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioStreamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const dataArrayRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const sourceNodeRef = useRef(null);
 
-  const simulateTranscription = () => {
-    const medicalPhrases = [
-      "Patient presents with chest pain and shortness of breath.",
-      "Blood pressure is 140 over 90.",
-      "Heart rate is regular at 72 beats per minute.",
-      "Lungs are clear to auscultation bilaterally.",
-      "No murmurs, rubs, or gallops appreciated.",
-      "Abdomen is soft, non-tender, non-distended.",
-      "Extremities show no edema or cyanosis.",
-      "Neurological examination is within normal limits.",
-      "Recommend ECG and chest X-ray.",
-      "Patient advised to follow up in one week.",
-    ];
+  const stopMicMonitoring = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
 
-    let phraseIndex = 0;
-    const transcriptionInterval = setInterval(() => {
-      if (phraseIndex < medicalPhrases.length && isRecording && !isPaused) {
-        setTranscript((prev) => {
-          const newText =
-            prev + (prev ? " " : "") + medicalPhrases[phraseIndex];
-          phraseIndex++;
-          return newText;
-        });
-
-        setMicLevel(Math.random() * 100);
-
-        if (autoScroll && textareaRef.current) {
-          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
-        }
-      } else {
-        clearInterval(transcriptionInterval);
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.disconnect();
+      } catch (error) {
+        console.warn("Unable to disconnect audio source", error);
       }
-    }, 2000);
+      sourceNodeRef.current = null;
+    }
 
-    return transcriptionInterval;
-  };
+    if (analyserRef.current) {
+      try {
+        analyserRef.current.disconnect();
+      } catch (error) {
+        console.warn("Unable to disconnect analyser", error);
+      }
+      analyserRef.current = null;
+    }
+
+    dataArrayRef.current = null;
+    setMicLevel(0);
+  }, []);
+
+  const startMicMonitoring = useCallback((stream) => {
+    try {
+      const AudioContextConstructor =
+        window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextConstructor) {
+        return;
+      }
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextConstructor();
+      }
+
+      const context = audioContextRef.current;
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 512;
+      analyserRef.current = analyser;
+
+      const source = context.createMediaStreamSource(stream);
+      sourceNodeRef.current = source;
+      source.connect(analyser);
+
+      const bufferLength = analyser.fftSize;
+      const dataArray = new Uint8Array(bufferLength);
+      dataArrayRef.current = dataArray;
+
+      const updateMicLevel = () => {
+        if (!analyserRef.current || !dataArrayRef.current) {
+          return;
+        }
+
+        analyserRef.current.getByteTimeDomainData(dataArrayRef.current);
+
+        let sumSquares = 0;
+        for (let i = 0; i < dataArrayRef.current.length; i += 1) {
+          const value = dataArrayRef.current[i] - 128;
+          sumSquares += value * value;
+        }
+
+        const rms = Math.sqrt(sumSquares / dataArrayRef.current.length);
+        const level = Math.min(100, (rms / 128) * 160);
+        setMicLevel(level);
+
+        animationFrameRef.current = requestAnimationFrame(updateMicLevel);
+      };
+
+      updateMicLevel();
+    } catch (error) {
+      console.error("Unable to initialize microphone monitoring", error);
+    }
+  }, []);
+
+  const releaseMediaStream = useCallback(() => {
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (isRecording && !isPaused) {
       intervalRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
-
-      const transcriptionInterval = simulateTranscription();
-
-      return () => {
-        clearInterval(transcriptionInterval);
-      };
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
     }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [isRecording, isPaused, autoScroll]);
+  }, [isRecording, isPaused]);
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setIsPaused(false);
-    setAwaitingConfirmation(false);
+  useEffect(() => {
+    if (autoScroll && textareaRef.current) {
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+    }
+  }, [transcript, autoScroll]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (error) {
+          console.warn("Failed to stop media recorder during cleanup", error);
+        }
+      }
+
+      stopMicMonitoring();
+      releaseMediaStream();
+    };
+  }, [releaseMediaStream, stopMicMonitoring]);
+
+  const startRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      message.error("Microphone recording is not supported in this browser");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      setTranscript("");
+      setRecordingTime(0);
+      setAudioFile(null);
+
+      if (typeof MediaRecorder === "undefined") {
+        message.error("MediaRecorder is not supported in this browser");
+        releaseMediaStream();
+        return;
+      }
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.addEventListener("dataavailable", (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      });
+
+      recorder.addEventListener("stop", () => {
+        try {
+          const mimeType = recorder.mimeType || "audio/webm";
+          const blob = new Blob(audioChunksRef.current, { type: mimeType });
+          audioChunksRef.current = [];
+
+          if (blob.size === 0) {
+            message.warning("Recorded audio was empty");
+            return;
+          }
+
+          const extension =
+            mimeType?.split(";")[0]?.split("/")?.[1] ?? "webm";
+          const filename = `recording-${Date.now()}.${extension}`;
+          const recordedFile = new File([blob], filename, { type: mimeType });
+          setAudioFile(recordedFile);
+          setAwaitingConfirmation(true);
+        } catch (error) {
+          console.error("Failed to process recorded audio", error);
+          message.error("Unable to process recorded audio");
+        }
+        mediaRecorderRef.current = null;
+      });
+
+      recorder.start();
+      startMicMonitoring(stream);
+      setIsRecording(true);
+      setIsPaused(false);
+      setAwaitingConfirmation(false);
+    } catch (error) {
+      console.error("Failed to start recording", error);
+      message.error(
+        error?.message ?? "Unable to access your microphone. Check permissions."
+      );
+      releaseMediaStream();
+    }
   };
 
   const pauseRecording = () => {
-    setIsPaused(!isPaused);
+    if (!mediaRecorderRef.current) {
+      return;
+    }
+
+    if (isPaused) {
+      try {
+        mediaRecorderRef.current.resume();
+        if (audioStreamRef.current) {
+          startMicMonitoring(audioStreamRef.current);
+        }
+        setIsPaused(false);
+      } catch (error) {
+        console.error("Failed to resume recording", error);
+        message.error("Unable to resume recording");
+      }
+    } else {
+      try {
+        mediaRecorderRef.current.pause();
+        stopMicMonitoring();
+        setIsPaused(true);
+      } catch (error) {
+        console.error("Failed to pause recording", error);
+        message.error("Unable to pause recording");
+      }
+    }
   };
 
   const stopRecording = () => {
+    if (!mediaRecorderRef.current) {
+      message.warning("No active recording to stop");
+      return;
+    }
+
+    try {
+      if (mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+    } catch (error) {
+      console.error("Failed to stop recording", error);
+      message.error("Unable to stop recording");
+    }
+
+    stopMicMonitoring();
+    releaseMediaStream();
     setIsRecording(false);
     setIsPaused(false);
-    setMicLevel(0);
-    setAwaitingConfirmation(true);
   };
 
-  const confirmTranscription = () => {
-    message.success("Transcription confirmed");
-    setAwaitingConfirmation(false);
+  const confirmTranscription = async () => {
+    if (!audioFile) {
+      message.warning("No audio recording available for transcription");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      message.error("You must be logged in to transcribe audio");
+      return;
+    }
+
+    setTranscribing(true);
+    try {
+      const response = await callWithAuth(uploadTranscription, audioFile);
+      const transcriptText = response?.transcript ?? "";
+      setTranscript(transcriptText);
+
+      if ((transcriptText ?? "").trim().length === 0) {
+        message.warning("Transcription completed but no speech was detected");
+      } else {
+        message.success(response?.detail ?? "Transcription completed");
+      }
+
+      setAwaitingConfirmation(false);
+    } catch (error) {
+      console.error("Failed to transcribe audio", error);
+      message.error(error?.message ?? "Unable to transcribe audio");
+    } finally {
+      setTranscribing(false);
+    }
   };
 
   const discardTranscription = () => {
     setTranscript("");
     setRecordingTime(0);
+    setAudioFile(null);
+    setMicLevel(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     message.info("Transcription discarded");
     setAwaitingConfirmation(false);
   };
@@ -159,6 +369,10 @@ export const NewTranscription = () => {
     setAudioFile(file ?? null);
     if (file) {
       message.info(`Selected file: ${file.name}`);
+      setTranscript("");
+      setAwaitingConfirmation(true);
+    } else {
+      setAwaitingConfirmation(false);
     }
   };
 
@@ -195,6 +409,7 @@ export const NewTranscription = () => {
       setTranscript("");
       setRecordingTime(0);
       setAudioFile(null);
+      setAwaitingConfirmation(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -451,6 +666,7 @@ export const NewTranscription = () => {
                       type="primary"
                       onClick={confirmTranscription}
                       block
+                      loading={transcribing}
                     >
                       Confirm Transcription
                     </Button>
