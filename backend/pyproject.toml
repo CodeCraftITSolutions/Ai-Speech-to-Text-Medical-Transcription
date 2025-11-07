@@ -21,6 +21,7 @@ boto3 = "^1.34"
 prometheus-client = "^0.20.0"
 alembic = "^1.13"
 requests = "^2.31"
+openai-whisper = "20231117"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
