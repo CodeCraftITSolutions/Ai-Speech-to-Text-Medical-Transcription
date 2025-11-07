@@ -353,8 +353,8 @@ export const NewTranscription = () => {
       .padStart(2, "0")}`;
   };
 
-  const saveDraft = () => {
-    message.success("Draft saved successfully");
+  const finalizeTranscription = () => {
+    message.success("Ai Team Will Handle This Later");
   };
 
   const confirmTranscript = () => {
@@ -371,11 +371,11 @@ export const NewTranscription = () => {
     message.success("Transcript confirmed from the latest recording");
   };
 
-  const finalizeTranscription = async () => {
+  const saveDraft = async () => {
     const normalizedTranscript = (transcript ?? "").trim();
 
     if (normalizedTranscript.length === 0) {
-      message.warning("No transcript available to finalize");
+      message.warning("No transcript available to save");
       return;
     }
 
