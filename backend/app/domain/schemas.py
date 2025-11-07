@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 from pydantic import ConfigDict
@@ -43,8 +43,59 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    two_factor_enabled: bool = False
+    two_factor_confirmed: bool = False
+    two_factor_method: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=8)
+    new_password: str = Field(min_length=8)
+
+
+class TwoFactorEnrollmentStart(BaseModel):
+    challenge_id: str
+    secret: str
+    provisioning_uri: str
+    expires_in_seconds: int = 600
+    debug_code: Optional[str] = None
+
+
+class TwoFactorEnableRequest(BaseModel):
+    challenge_id: str
+    code: str = Field(min_length=4, max_length=8)
+
+
+class TwoFactorDisableRequest(BaseModel):
+    current_password: str = Field(min_length=8)
+
+
+class TwoFactorStatus(BaseModel):
+    enabled: bool
+    confirmed: bool
+    method: Optional[str] = None
+
+
+class LoginTwoFactorChallenge(BaseModel):
+    requires_two_factor: Literal[True] = True
+    challenge_id: str
+    method: Literal["totp"] = "totp"
+    expires_in_seconds: int = 300
+    debug_code: Optional[str] = None
+
+
+class LoginSuccess(Token):
+    requires_two_factor: Literal[False] = False
+
+
+LoginResponse = LoginSuccess | LoginTwoFactorChallenge
+
+
+class TwoFactorLoginVerifyRequest(BaseModel):
+    challenge_id: str
+    code: str = Field(min_length=4, max_length=8)
 
 
 class JobBase(BaseModel):

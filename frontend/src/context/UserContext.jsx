@@ -16,6 +16,9 @@ const normalizeUser = (user) => {
   const lastName = user.last_name ?? null;
   const phoneNumber = user.phone_number ?? null;
   const displayName = [firstName, lastName].filter(Boolean).join(" ") || user.username;
+  const twoFactorEnabled = Boolean(user.two_factor_enabled);
+  const twoFactorConfirmed = Boolean(user.two_factor_confirmed);
+  const twoFactorMethod = user.two_factor_method ?? (twoFactorEnabled ? "totp" : null);
 
   return {
     id: user.id,
@@ -27,6 +30,9 @@ const normalizeUser = (user) => {
     firstName,
     lastName,
     phoneNumber,
+    twoFactorEnabled,
+    twoFactorConfirmed,
+    twoFactorMethod,
   };
 };
 
@@ -147,12 +153,42 @@ export const UserProvider = ({ children }) => {
       setLoading(true);
       try {
         const authResponse = await api.login(username, password);
+        if (authResponse?.requires_two_factor) {
+          return {
+            requiresTwoFactor: true,
+            challengeId: authResponse.challenge_id,
+            method: authResponse.method,
+            expiresInSeconds: authResponse.expires_in_seconds,
+            debugCode: authResponse.debug_code ?? null,
+          };
+        }
         if (!authResponse?.access_token) {
           throw new Error("No access token returned by server");
         }
         setAccessToken(authResponse.access_token);
         await fetchCurrentUser(authResponse.access_token);
-        return authResponse;
+        return { requiresTwoFactor: false, access_token: authResponse.access_token };
+      } catch (error) {
+        clearSession();
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchCurrentUser, clearSession]
+  );
+
+  const completeTwoFactorLogin = useCallback(
+    async (challengeId, code) => {
+      setLoading(true);
+      try {
+        const response = await api.verifyTwoFactorLogin({ challengeId, code });
+        if (!response?.access_token) {
+          throw new Error("No access token returned by server");
+        }
+        setAccessToken(response.access_token);
+        await fetchCurrentUser(response.access_token);
+        return response;
       } catch (error) {
         clearSession();
         throw error;
@@ -197,13 +233,24 @@ export const UserProvider = ({ children }) => {
       accessToken,
       loading,
       login,
+      completeTwoFactorLogin,
       register,
       logout,
       refreshUser,
       callWithAuth,
       isAuthenticated: Boolean(user && accessToken),
     }),
-    [user, accessToken, loading, login, register, logout, refreshUser, callWithAuth]
+    [
+      user,
+      accessToken,
+      loading,
+      login,
+      completeTwoFactorLogin,
+      register,
+      logout,
+      refreshUser,
+      callWithAuth,
+    ]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
