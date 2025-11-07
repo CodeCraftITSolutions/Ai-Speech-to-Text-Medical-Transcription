@@ -15,7 +15,7 @@ services:
       - STORAGE_KEY=minioadmin
       - STORAGE_SECRET=minioadmin
       - FRONTEND_ORIGIN=http://localhost:3000
-      - ASR_MODEL=whisper-large
+      - ASR_MODEL=whisper-lightweight
     ports:
       - "8000:8000"
     depends_on:

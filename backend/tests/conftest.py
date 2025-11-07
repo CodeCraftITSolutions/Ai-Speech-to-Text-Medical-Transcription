@@ -20,7 +20,7 @@ os.environ.setdefault("STORAGE_BUCKET", "test-bucket")
 os.environ.setdefault("STORAGE_KEY", "minioadmin")
 os.environ.setdefault("STORAGE_SECRET", "minioadmin")
 os.environ.setdefault("FRONTEND_ORIGIN", "http://localhost:3000")
-os.environ.setdefault("ASR_MODEL", "whisper-large")
+os.environ.setdefault("ASR_MODEL", "whisper-lightweight")
 
 from app.domain.models import Base  # noqa: E402
 
