@@ -6,6 +6,7 @@ from app.infra.db import get_db
 from app.domain import repositories, schemas
 from app.domain.models import UserRole
 from app.infra import auth
+from app.services import totp as totp_service
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
@@ -44,6 +45,19 @@ def login(
     user = user_repo.get_by_username(username)
     if not user or not auth.verify_password(password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if user.totp_enabled:
+        code = getattr(payload, "totp_code", None)
+        if not code:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"message": "Two-factor authentication required", "totp_required": True},
+            )
+        if not totp_service.verify_code(user.totp_secret or "", code):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid two-factor authentication code",
+            )
 
     access_token = auth.create_access_token(subject=user.id)
     refresh_token = auth.create_refresh_token(subject=user.id)

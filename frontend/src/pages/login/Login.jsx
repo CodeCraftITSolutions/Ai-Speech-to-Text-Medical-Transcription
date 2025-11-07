@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Input, Button, message } from "antd";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Stethoscope } from "lucide-react";
@@ -8,8 +8,15 @@ const LoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [needsTotp, setNeedsTotp] = useState(false);
+  const [totpCode, setTotpCode] = useState("");
   const navigate = useNavigate();
   const { login, isAuthenticated } = useUser();
+
+  useEffect(() => {
+    setNeedsTotp(false);
+    setTotpCode("");
+  }, [username]);
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -19,10 +26,18 @@ const LoginForm = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await login(username, password);
+      await login(username, password, needsTotp ? totpCode : undefined);
       message.success("Logged in successfully");
       navigate("/dashboard");
     } catch (error) {
+      if (error?.body?.totp_required) {
+        setNeedsTotp(true);
+        setTotpCode("");
+        message.info(
+          error?.message || "Enter the 6-digit code from your authenticator app."
+        );
+        return;
+      }
       message.error(error?.message ?? "Unable to login");
     } finally {
       setSubmitting(false);
@@ -69,6 +84,27 @@ const LoginForm = () => {
               required
             />
           </div>
+
+          {needsTotp && (
+            <div className="space-y-1">
+              <label htmlFor="totp" className="block text-sm font-medium text-gray-700">
+                Authentication Code
+              </label>
+              <Input
+                id="totp"
+                placeholder="123456"
+                value={totpCode}
+                maxLength={8}
+                inputMode="numeric"
+                pattern="\d*"
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                required
+              />
+              <p className="text-xs text-gray-500">
+                Enter the 6-digit code from your authenticator app.
+              </p>
+            </div>
+          )}
 
           <Button type="primary" htmlType="submit" className="w-full" loading={submitting}>
             Sign In
