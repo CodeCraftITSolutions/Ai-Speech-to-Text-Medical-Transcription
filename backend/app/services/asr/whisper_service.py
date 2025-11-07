@@ -11,16 +11,6 @@ from faster_whisper import WhisperModel
 AVAILABLE_MODELS = {
     "tiny",
     "tiny.en",
-    "base",
-    "base.en",
-    "small",
-    "small.en",
-    "medium",
-    "medium.en",
-    "large",
-    "large-v1",
-    "large-v2",
-    "large-v3",
 }
 
 logger = logging.getLogger(__name__)
