@@ -97,6 +97,13 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
   const [totpBusy, setTotpBusy] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
   const [disablingTotp, setDisablingTotp] = useState(false);
+  const totpQrUrl = useMemo(() => {
+    if (!totpSetup?.otpauth_url) {
+      return null;
+    }
+    const encoded = encodeURIComponent(totpSetup.otpauth_url);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encoded}`;
+  }, [totpSetup?.otpauth_url]);
 
   const copyToClipboard = useCallback(async (value, description) => {
     if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
@@ -160,7 +167,9 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
       const setup = await callWithAuth(initiateTotpSetup);
       setTotpSetup(setup);
       setTotpCode("");
-      message.success("Authenticator setup generated. Copy the secret or open the setup link in your authenticator app.");
+      message.success(
+        "Authenticator setup generated. Scan the QR code or enter the secret in your authenticator app."
+      );
     } catch (error) {
       message.error(error?.message || "Unable to start two-factor setup.");
     } finally {
@@ -271,11 +280,26 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
             <div className="mt-3 space-y-3">
               {totpSetup ? (
                 <>
-                  <div className="space-y-2 rounded border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3">
-                    <p className="text-sm font-medium">Step 1. Add this account to your authenticator app.</p>
-                    <p className="text-xs text-muted-foreground">
-                      You can copy the secret below or paste the setup link into an authenticator that supports otpauth URLs.
-                    </p>
+                  <div className="space-y-3 rounded border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3">
+                    <div>
+                      <p className="text-sm font-medium">Step 1. Add this account to your authenticator app.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Scan the QR code with your authenticator app. If you are unable to scan it, you can add the account manually using the secret below.
+                      </p>
+                    </div>
+                    {totpQrUrl ? (
+                      <div className="flex items-center justify-center">
+                        <img
+                          src={totpQrUrl}
+                          alt="Authenticator setup QR code"
+                          className="h-40 w-40 rounded bg-white p-2 shadow-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-xs text-red-500">
+                        Unable to generate a QR code. Use the secret key below to add the account manually.
+                      </div>
+                    )}
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <div className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-1 font-mono text-sm break-all">
                         {totpSetup.secret}
@@ -285,15 +309,6 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
                         onClick={() => copyToClipboard(totpSetup.secret, "Secret key")}
                       >
                         Copy Secret
-                      </Button>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <Input value={totpSetup.otpauth_url} readOnly />
-                      <Button
-                        size="small"
-                        onClick={() => copyToClipboard(totpSetup.otpauth_url, "Setup link")}
-                      >
-                        Copy Link
                       </Button>
                     </div>
                   </div>
