@@ -43,6 +43,7 @@ export const NewTranscription = () => {
   const [autoScroll, setAutoScroll] = useState(true);
   const [audioFile, setAudioFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   const { theme } = useTheme();
   const { callWithAuth, isAuthenticated } = useUser();
@@ -115,6 +116,7 @@ export const NewTranscription = () => {
   const startRecording = () => {
     setIsRecording(true);
     setIsPaused(false);
+    setAwaitingConfirmation(false);
   };
 
   const pauseRecording = () => {
@@ -125,6 +127,19 @@ export const NewTranscription = () => {
     setIsRecording(false);
     setIsPaused(false);
     setMicLevel(0);
+    setAwaitingConfirmation(true);
+  };
+
+  const confirmTranscription = () => {
+    message.success("Transcription confirmed");
+    setAwaitingConfirmation(false);
+  };
+
+  const discardTranscription = () => {
+    setTranscript("");
+    setRecordingTime(0);
+    message.info("Transcription discarded");
+    setAwaitingConfirmation(false);
   };
 
   const formatTime = (seconds) => {
@@ -427,9 +442,29 @@ export const NewTranscription = () => {
 
             <div className="flex gap-2 mt-2">
               {!isRecording ? (
-                <Button onClick={startRecording} icon={<Mic />} block>
-                  Start
-                </Button>
+                awaitingConfirmation ? (
+                  <>
+                    <Button onClick={discardTranscription} block>
+                      Discard
+                    </Button>
+                    <Button
+                      type="primary"
+                      onClick={confirmTranscription}
+                      block
+                    >
+                      Confirm Transcription
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={startRecording}
+                    icon={<Mic />}
+                    block
+                    disabled={awaitingConfirmation}
+                  >
+                    Start
+                  </Button>
+                )
               ) : (
                 <>
                   <Button
