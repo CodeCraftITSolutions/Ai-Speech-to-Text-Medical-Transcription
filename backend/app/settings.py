@@ -43,7 +43,9 @@ class Settings(BaseSettings):
                 origins.add(localhost_variant)
         return sorted(origins)
 
-    ASR_MODEL: str = "whisper-lightweight"
+    ASR_MODEL: str = "tiny"
+    ASR_WHISPER_DEVICE: str | None = None
+    ASR_WHISPER_COMPUTE_TYPE: str | None = None
 
     class Config:
         env_file = ".env"

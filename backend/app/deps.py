@@ -26,12 +26,24 @@ def get_report_repository(db: Session = Depends(get_db)) -> ReportRepository:
 
 
 @lru_cache(maxsize=1)
-def _get_whisper_service_cached(model_name: str) -> WhisperService:
-    return WhisperService(model_name=model_name)
+def _get_whisper_service_cached(
+    model_name: str,
+    device: str | None,
+    compute_type: str | None,
+) -> WhisperService:
+    return WhisperService(
+        model_name=model_name,
+        device=device,
+        compute_type=compute_type,
+    )
 
 
 def get_whisper_service(
     settings: Settings = Depends(get_settings_dependency),
 ) -> WhisperService:
-    return _get_whisper_service_cached(settings.ASR_MODEL)
+    return _get_whisper_service_cached(
+        settings.ASR_MODEL,
+        settings.ASR_WHISPER_DEVICE,
+        settings.ASR_WHISPER_COMPUTE_TYPE,
+    )
 
