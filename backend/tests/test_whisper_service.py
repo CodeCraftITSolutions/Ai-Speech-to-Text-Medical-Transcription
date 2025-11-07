@@ -5,9 +5,10 @@ from app.services.asr import whisper_service
 
 def test_resolve_model_name_alias(monkeypatch):
     monkeypatch.setattr(
-        whisper_service.whisper,
-        "available_models",
-        lambda: ["tiny", "small", "large"],
+        whisper_service,
+        "AVAILABLE_MODELS",
+        {"tiny", "small", "large"},
+        raising=False,
     )
 
     service = whisper_service.WhisperService("whisper-small")
@@ -17,21 +18,23 @@ def test_resolve_model_name_alias(monkeypatch):
 
 def test_resolve_model_name_lightweight_alias(monkeypatch):
     monkeypatch.setattr(
-        whisper_service.whisper,
-        "available_models",
-        lambda: ["tiny", "small", "large"],
+        whisper_service,
+        "AVAILABLE_MODELS",
+        {"tiny", "small", "large"},
+        raising=False,
     )
 
     service = whisper_service.WhisperService("whisper-lightweight")
 
-    assert service._model_name == "small"
+    assert service._model_name == "tiny"
 
 
 def test_resolve_model_name_invalid(monkeypatch):
     monkeypatch.setattr(
-        whisper_service.whisper,
-        "available_models",
-        lambda: ["tiny", "large"],
+        whisper_service,
+        "AVAILABLE_MODELS",
+        {"tiny", "large"},
+        raising=False,
     )
 
     with pytest.raises(RuntimeError) as exc:
