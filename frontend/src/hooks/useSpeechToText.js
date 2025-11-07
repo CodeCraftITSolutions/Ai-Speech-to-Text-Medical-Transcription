@@ -1,150 +1,97 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 
 const defaultOptions = {
   continuous: true,
-  interimResults: true,
+  interimResults: false,
   lang: "en-US",
 };
 
 const useSpeechToText = (initialOptions = {}) => {
-  const [supported, setSupported] = useState(true);
-  const [listening, setListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const optionsRef = useRef({ ...defaultOptions, ...initialOptions });
+  const restartOnEndRef = useRef(false);
   const [error, setError] = useState(null);
 
-  const recognitionRef = useRef(null);
-  const restartOnEndRef = useRef(false);
-  const finalTranscriptRef = useRef("");
-  const optionsRef = useRef({ ...defaultOptions, ...initialOptions });
+  const {
+    transcript,
+    listening,
+    browserSupportsSpeechRecognition,
+    isMicrophoneAvailable,
+    error: recognitionError,
+    resetTranscript: resetLibraryTranscript,
+  } = useSpeechRecognition();
+
+  const supported =
+    browserSupportsSpeechRecognition &&
+    (isMicrophoneAvailable === undefined || isMicrophoneAvailable === true);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      setSupported(false);
+    if (!recognitionError) {
       return;
     }
 
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    setError(recognitionError);
+  }, [recognitionError]);
 
-    if (!SpeechRecognition) {
-      setSupported(false);
+  useEffect(() => {
+    if (isMicrophoneAvailable === false) {
+      setError("speech-recognition-microphone-unavailable");
+    }
+  }, [isMicrophoneAvailable]);
+
+  useEffect(() => {
+    if (!restartOnEndRef.current) {
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = optionsRef.current.continuous;
-    recognition.interimResults = optionsRef.current.interimResults;
-    recognition.lang = optionsRef.current.lang;
+    if (listening) {
+      return;
+    }
 
-    recognition.onresult = (event) => {
-      let interimTranscript = "";
-
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        const text = result[0]?.transcript ?? "";
-
-        if (result.isFinal) {
-          finalTranscriptRef.current = `${
-            finalTranscriptRef.current
-          }${text} `;
-        } else {
-          interimTranscript += text;
-        }
-      }
-
-      const combinedTranscript = `${
-        finalTranscriptRef.current
-      }${interimTranscript}`.trim();
-      setTranscript(combinedTranscript);
-    };
-
-    recognition.onstart = () => {
-      setError(null);
-      setListening(true);
-    };
-
-    recognition.onerror = (event) => {
-      if (event?.error === "no-speech") {
-        // Browser detected silence, but this isn't fatal.
-        return;
-      }
-      setError(event?.error ?? "speech-recognition-error");
-    };
-
-    recognition.onend = () => {
-      if (restartOnEndRef.current) {
-        try {
-          recognition.start();
-        } catch (startError) {
-          restartOnEndRef.current = false;
-          setListening(false);
-          setError(startError?.message ?? "speech-recognition-restart-error");
-        }
-      } else {
-        setListening(false);
-      }
-    };
-
-    recognitionRef.current = recognition;
-
-    return () => {
+    try {
+      SpeechRecognition.startListening({
+        continuous: !!optionsRef.current.continuous,
+        interimResults: !!optionsRef.current.interimResults,
+        lang: optionsRef.current.lang,
+        language: optionsRef.current.lang,
+      });
+    } catch (startError) {
       restartOnEndRef.current = false;
-      recognition.onresult = null;
-      recognition.onstart = null;
-      recognition.onend = null;
-      recognition.onerror = null;
-      try {
-        recognition.stop();
-      } catch (stopError) {
-        if (typeof console !== "undefined") {
-          console.warn(
-            "Unable to stop speech recognition during cleanup",
-            stopError
-          );
-        }
+
+      if (startError?.name !== "InvalidStateError") {
+        setError(startError?.message ?? "speech-recognition-restart-error");
       }
-      recognitionRef.current = null;
-    };
+    }
+  }, [listening]);
+
+  const startListening = useCallback((options = {}) => {
+    optionsRef.current = { ...optionsRef.current, ...options };
+    restartOnEndRef.current = true;
+    setError(null);
+
+    try {
+      SpeechRecognition.startListening({
+        continuous: !!optionsRef.current.continuous,
+        interimResults: !!optionsRef.current.interimResults,
+        lang: optionsRef.current.lang,
+        language: optionsRef.current.lang,
+      });
+    } catch (startError) {
+      restartOnEndRef.current = false;
+
+      if (startError?.name !== "InvalidStateError") {
+        setError(startError?.message ?? "speech-recognition-start-error");
+      }
+    }
   }, []);
 
-  const startListening = useCallback(
-    (options = {}) => {
-      if (!recognitionRef.current) {
-        return;
-      }
-
-      const recognition = recognitionRef.current;
-      optionsRef.current = { ...optionsRef.current, ...options };
-
-      recognition.continuous = !!optionsRef.current.continuous;
-      recognition.interimResults = !!optionsRef.current.interimResults;
-      if (optionsRef.current.lang) {
-        recognition.lang = optionsRef.current.lang;
-      }
-
-      restartOnEndRef.current = true;
-
-      try {
-        recognition.start();
-      } catch (startError) {
-        // Safari throws an InvalidStateError if start is called while active.
-        if (startError?.name !== "InvalidStateError") {
-          setError(startError?.message ?? "speech-recognition-start-error");
-        }
-      }
-    },
-    []
-  );
-
   const stopListening = useCallback(() => {
-    if (!recognitionRef.current) {
-      return;
-    }
-
     restartOnEndRef.current = false;
 
     try {
-      recognitionRef.current.stop();
+      SpeechRecognition.stopListening();
     } catch (stopError) {
       if (stopError?.name !== "InvalidStateError") {
         setError(stopError?.message ?? "speech-recognition-stop-error");
@@ -153,14 +100,10 @@ const useSpeechToText = (initialOptions = {}) => {
   }, []);
 
   const abortListening = useCallback(() => {
-    if (!recognitionRef.current) {
-      return;
-    }
-
     restartOnEndRef.current = false;
 
     try {
-      recognitionRef.current.abort();
+      SpeechRecognition.abortListening();
     } catch (abortError) {
       if (abortError?.name !== "InvalidStateError") {
         setError(abortError?.message ?? "speech-recognition-abort-error");
@@ -169,9 +112,10 @@ const useSpeechToText = (initialOptions = {}) => {
   }, []);
 
   const resetTranscript = useCallback(() => {
-    finalTranscriptRef.current = "";
-    setTranscript("");
-  }, []);
+    restartOnEndRef.current = false;
+    setError(null);
+    resetLibraryTranscript();
+  }, [resetLibraryTranscript]);
 
   return {
     supported,
