@@ -43,7 +43,7 @@ class Settings(BaseSettings):
                 origins.add(localhost_variant)
         return sorted(origins)
 
-    ASR_MODEL: str = "whisper-large"  # TODO: used by AI team
+    ASR_MODEL: str = "whisper-lightweight"
 
     class Config:
         env_file = ".env"

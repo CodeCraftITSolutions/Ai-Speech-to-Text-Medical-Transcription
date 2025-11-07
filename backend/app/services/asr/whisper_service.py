@@ -25,6 +25,24 @@ class WhisperService:
         """Resolve a configured Whisper model name to one recognised by the library."""
 
         available_models = set(whisper.available_models())
+
+        # Provide a couple of friendlier aliases for commonly requested
+        # configurations.  The "lightweight" alias gives us a small-footprint
+        # model that runs comfortably on developer laptops.
+        alias_map = {
+            "whisper-lightweight": "small",
+            "lightweight": "small",
+        }
+        if model_name in alias_map:
+            alias_target = alias_map[model_name]
+            if alias_target in available_models:
+                logger.info(
+                    "Normalised Whisper model alias '%s' to '%s'",
+                    model_name,
+                    alias_target,
+                )
+                return alias_target
+
         if model_name in available_models:
             return model_name
 
