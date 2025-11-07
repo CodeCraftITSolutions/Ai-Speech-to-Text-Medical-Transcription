@@ -29,7 +29,6 @@ export const Profile = () => {
   const email = user?.email ?? "Not provided";
   const phone = user?.phoneNumber ?? user?.phone ?? "Not provided";
   const role = user?.role ?? "Member";
-  const specialty = user?.specialty ?? "General";
   const username = user?.username ?? "Not provided";
 
   const personalDetails = [
@@ -46,18 +45,13 @@ export const Profile = () => {
     {
       icon: Mail,
       label: "Email address",
-      value: email,
+      value: username,
     },
     {
       icon: Phone,
       label: "Phone number",
       value: phone || "Not provided",
-    },
-    {
-      icon: IdCard,
-      label: "Username",
-      value: username,
-    },
+    }
   ];
 
   return (
@@ -74,12 +68,9 @@ export const Profile = () => {
             </Avatar>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold text-foreground">{displayName}</h1>
-              <p className="text-muted-foreground">{email}</p>
+              <p className="text-muted-foreground">{username}</p>
               <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                <Tag color="blue" className="flex items-center gap-2">
-                  <BriefcaseMedical className="h-4 w-4" />
-                  <span>{specialty}</span>
-                </Tag>
+               
                 <Tag color="green" className="flex items-center gap-2 capitalize">
                   <ShieldCheck className="h-4 w-4" />
                   <span>{role}</span>
@@ -113,10 +104,7 @@ export const Profile = () => {
               <p className="text-sm font-medium text-muted-foreground">Role</p>
               <p className="text-base capitalize text-foreground">{role}</p>
             </div>
-            <div className="rounded-lg bg-slate-50 p-4">
-              <p className="text-sm font-medium text-muted-foreground">Specialty</p>
-              <p className="text-base text-foreground">{specialty}</p>
-            </div>
+          
             {user?.bio && (
               <div className="rounded-lg bg-slate-50 p-4">
                 <p className="text-sm font-medium text-muted-foreground">About</p>
