@@ -7,20 +7,20 @@ def test_resolve_model_name_alias(monkeypatch):
     monkeypatch.setattr(
         whisper_service,
         "AVAILABLE_MODELS",
-        {"tiny", "small", "large"},
+        {"tiny", "tiny.en"},
         raising=False,
     )
 
-    service = whisper_service.WhisperService("whisper-small")
+    service = whisper_service.WhisperService("whisper-tiny")
 
-    assert service._model_name == "small"
+    assert service._model_name == "tiny"
 
 
 def test_resolve_model_name_lightweight_alias(monkeypatch):
     monkeypatch.setattr(
         whisper_service,
         "AVAILABLE_MODELS",
-        {"tiny", "small", "large"},
+        {"tiny", "tiny.en"},
         raising=False,
     )
 
@@ -33,7 +33,7 @@ def test_resolve_model_name_invalid(monkeypatch):
     monkeypatch.setattr(
         whisper_service,
         "AVAILABLE_MODELS",
-        {"tiny", "large"},
+        {"tiny", "tiny.en"},
         raising=False,
     )
 
