@@ -30,13 +30,15 @@ const LoginForm = () => {
       message.success("Logged in successfully");
       navigate("/dashboard");
     } catch (error) {
-      if (error?.body?.totp_required) {
-        setNeedsTotp(true);
-        setTotpCode("");
-        message.info(
-          error?.message || "Enter the 6-digit code from your authenticator app."
-        );
-        return;
+        const totpRequired =
+        error?.body?.totp_required || error?.body?.detail?.totp_required;
+        if (totpRequired) {
+          setNeedsTotp(true);
+          setTotpCode("");
+          message.info(
+            error?.message || "Enter the 6-digit code from your authenticator app."
+          );
+          return;
       }
       message.error(error?.message ?? "Unable to login");
     } finally {
