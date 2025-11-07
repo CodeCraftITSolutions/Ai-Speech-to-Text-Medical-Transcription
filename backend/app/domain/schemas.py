@@ -13,6 +13,7 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+    totp_code: Optional[str] = None
 
 
 class TokenPayload(BaseModel):
@@ -43,8 +44,31 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    totp_enabled: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=8)
+
+
+class TOTPSetupResponse(BaseModel):
+    secret: str
+    otpauth_url: str
+
+
+class TOTPVerifyRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=8)
+
+
+class TOTPDisableRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+
+
+class TOTPStatus(BaseModel):
+    enabled: bool
 
 
 class JobBase(BaseModel):
