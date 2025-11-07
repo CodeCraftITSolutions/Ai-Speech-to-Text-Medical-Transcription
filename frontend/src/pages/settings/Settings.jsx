@@ -35,7 +35,6 @@ const { Option } = Select;
 /* --------------------------- Memoized subcomponents -------------------------- */
 
 const ProfileCard = React.memo(function ProfileCard({
-  themeMode,
   user,
   firstName,
   setFirstName,
@@ -371,7 +370,7 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
   );
 });
 
-const AudioCard = React.memo(function AudioCard({ themeMode }) {
+const AudioCard = React.memo(function AudioCard() {
   return (
     <Card title="Audio Configuration" extra={<Mic className="w-5 h-5" />}>
       <div className="flex flex-col gap-2">
@@ -592,7 +591,6 @@ export const Settings = () => {
         label: "Profile",
         children: (
           <ProfileCard
-            themeMode={themeMode}
             user={user}
             firstName={firstName}
             setFirstName={setFirstName}
@@ -617,7 +615,7 @@ export const Settings = () => {
       {
         key: "audio",
         label: "Audio",
-        children: <AudioCard themeMode={themeMode} />,
+        children: <AudioCard />,
       },
       {
         key: "preferences",

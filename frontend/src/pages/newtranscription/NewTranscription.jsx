@@ -24,8 +24,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import exportToPdf from "../../utils/exportToPdf.jsx";
 import exportToWord from "../../utils/exportToWord.jsx";
-import { useUser } from "../../context/UserContext.jsx";
-import { createJob, uploadTranscription } from "../../api/client";
+import useSpeechToText from "../../hooks/useSpeechToText.js";
 
 const { Option } = Select;
 
@@ -41,19 +40,22 @@ export const NewTranscription = () => {
   const [sendToTranscriptionist, setSendToTranscriptionist] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
-  const [audioFile, setAudioFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
 
   const { theme } = useTheme();
-  const { callWithAuth, isAuthenticated } = useUser();
+
+  const {
+    supported: speechSupported,
+    listening,
+    transcript: speechTranscript,
+    error: speechError,
+    startListening,
+    stopListening,
+    abortListening,
+    resetTranscript,
+  } = useSpeechToText();
 
   const intervalRef = useRef();
   const textareaRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -169,25 +171,47 @@ export const NewTranscription = () => {
   }, [transcript, autoScroll]);
 
   useEffect(() => {
+    if (speechSupported === false) {
+      message.error("Speech recognition is not supported in this browser");
+    }
+  }, [speechSupported]);
+
+  useEffect(() => {
+    if (!speechError) {
+      return;
+    }
+
+    message.error(
+      typeof speechError === "string"
+        ? `Speech recognition error: ${speechError}`
+        : "Speech recognition encountered an unexpected error"
+    );
+  }, [speechError]);
+
+  useEffect(() => {
+    if (isRecording || listening) {
+      setTranscript(speechTranscript);
+    }
+  }, [isRecording, listening, speechTranscript]);
+
+  useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
 
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        try {
-          mediaRecorderRef.current.stop();
-        } catch (error) {
-          console.warn("Failed to stop media recorder during cleanup", error);
-        }
-      }
-
+      abortListening();
       stopMicMonitoring();
       releaseMediaStream();
     };
-  }, [releaseMediaStream, stopMicMonitoring]);
+  }, [abortListening, releaseMediaStream, stopMicMonitoring]);
 
   const startRecording = async () => {
+    if (!speechSupported) {
+      message.error("Speech recognition is not supported in this browser");
+      return;
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
       message.error("Microphone recording is not supported in this browser");
       return;
@@ -197,59 +221,14 @@ export const NewTranscription = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioStreamRef.current = stream;
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
+      resetTranscript();
       setTranscript("");
       setRecordingTime(0);
-      setAudioFile(null);
 
-      if (typeof MediaRecorder === "undefined") {
-        message.error("MediaRecorder is not supported in this browser");
-        releaseMediaStream();
-        return;
-      }
-
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
-
-      recorder.addEventListener("dataavailable", (event) => {
-        if (event.data && event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      });
-
-      recorder.addEventListener("stop", () => {
-        try {
-          const mimeType = recorder.mimeType || "audio/webm";
-          const blob = new Blob(audioChunksRef.current, { type: mimeType });
-          audioChunksRef.current = [];
-
-          if (blob.size === 0) {
-            message.warning("Recorded audio was empty");
-            return;
-          }
-
-          const extension =
-            mimeType?.split(";")[0]?.split("/")?.[1] ?? "webm";
-          const filename = `recording-${Date.now()}.${extension}`;
-          const recordedFile = new File([blob], filename, { type: mimeType });
-          setAudioFile(recordedFile);
-          setAwaitingConfirmation(true);
-        } catch (error) {
-          console.error("Failed to process recorded audio", error);
-          message.error("Unable to process recorded audio");
-        }
-        mediaRecorderRef.current = null;
-      });
-
-      recorder.start();
       startMicMonitoring(stream);
+      startListening({ continuous: true, interimResults: true });
       setIsRecording(true);
       setIsPaused(false);
-      setAwaitingConfirmation(false);
     } catch (error) {
       console.error("Failed to start recording", error);
       message.error(
@@ -260,13 +239,13 @@ export const NewTranscription = () => {
   };
 
   const pauseRecording = () => {
-    if (!mediaRecorderRef.current) {
+    if (!isRecording) {
       return;
     }
 
     if (isPaused) {
       try {
-        mediaRecorderRef.current.resume();
+        startListening({ continuous: true, interimResults: true });
         if (audioStreamRef.current) {
           startMicMonitoring(audioStreamRef.current);
         }
@@ -277,7 +256,7 @@ export const NewTranscription = () => {
       }
     } else {
       try {
-        mediaRecorderRef.current.pause();
+        stopListening();
         stopMicMonitoring();
         setIsPaused(true);
       } catch (error) {
@@ -288,18 +267,16 @@ export const NewTranscription = () => {
   };
 
   const stopRecording = () => {
-    if (!mediaRecorderRef.current) {
+    if (!isRecording && !listening) {
       message.warning("No active recording to stop");
       return;
     }
 
     try {
-      if (mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
-      }
+      stopListening();
     } catch (error) {
-      console.error("Failed to stop recording", error);
-      message.error("Unable to stop recording");
+      console.error("Failed to stop speech recognition", error);
+      message.error("Unable to stop speech recognition");
     }
 
     stopMicMonitoring();
@@ -308,48 +285,12 @@ export const NewTranscription = () => {
     setIsPaused(false);
   };
 
-  const confirmTranscription = async () => {
-    if (!audioFile) {
-      message.warning("No audio recording available for transcription");
-      return;
-    }
-
-    if (!isAuthenticated) {
-      message.error("You must be logged in to transcribe audio");
-      return;
-    }
-
-    setTranscribing(true);
-    try {
-      const response = await callWithAuth(uploadTranscription, audioFile);
-      const transcriptText = response?.transcript ?? "";
-      setTranscript(transcriptText);
-
-      if ((transcriptText ?? "").trim().length === 0) {
-        message.warning("Transcription completed but no speech was detected");
-      } else {
-        message.success(response?.detail ?? "Transcription completed");
-      }
-
-      setAwaitingConfirmation(false);
-    } catch (error) {
-      console.error("Failed to transcribe audio", error);
-      message.error(error?.message ?? "Unable to transcribe audio");
-    } finally {
-      setTranscribing(false);
-    }
-  };
-
   const discardTranscription = () => {
+    resetTranscript();
     setTranscript("");
     setRecordingTime(0);
-    setAudioFile(null);
     setMicLevel(0);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
     message.info("Transcription discarded");
-    setAwaitingConfirmation(false);
   };
 
   const formatTime = (seconds) => {
@@ -364,60 +305,19 @@ export const NewTranscription = () => {
     message.success("Draft saved successfully");
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    setAudioFile(file ?? null);
-    if (file) {
-      message.info(`Selected file: ${file.name}`);
-      setTranscript("");
-      setAwaitingConfirmation(true);
-    } else {
-      setAwaitingConfirmation(false);
-    }
-  };
+  const finalizeTranscription = () => {
+    const normalizedTranscript = (transcript ?? "").trim();
 
-  const finalizeTranscription = async () => {
-    if (!isAuthenticated) {
-      message.error("You must be logged in to submit audio");
+    if (normalizedTranscript.length === 0) {
+      message.warning("No transcript available to finalize");
       return;
     }
 
-    if (!audioFile) {
-      message.warning("Please select an audio file to upload");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const uploadResponse = await callWithAuth(uploadTranscription, audioFile);
-      message.success(uploadResponse?.detail ?? "Audio uploaded successfully");
-
-      await callWithAuth(createJob, {
-        type: "transcription",
-        input_uri: uploadResponse?.filename ?? audioFile.name,
-      });
-
-      message.success(
-        sendToTranscriptionist
-          ? "Transcription submitted for review"
-          : "Transcription job created"
-      );
-
-      setIsRecording(false);
-      setIsPaused(false);
-      setMicLevel(0);
-      setTranscript("");
-      setRecordingTime(0);
-      setAudioFile(null);
-      setAwaitingConfirmation(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error) {
-      message.error(error?.message ?? "Unable to submit transcription");
-    } finally {
-      setUploading(false);
-    }
+    message.success(
+      sendToTranscriptionist
+        ? "Transcription ready for review"
+        : "Transcription finalized locally"
+    );
   };
 
   return (
@@ -445,7 +345,6 @@ export const NewTranscription = () => {
             type="primary"
             icon={<Send />}
             className="text-xs"
-            loading={uploading}
           >
             {sendToTranscriptionist ? "Send to Review" : "Finalize"}
           </Button>
@@ -587,33 +486,6 @@ export const NewTranscription = () => {
                 </Select>
               </ConfigProvider>
             </div>
-            <div className="space-y-2 mt-4">
-              <p className="text-muted-foreground font-medium">Audio File</p>
-              <ConfigProvider
-                theme={{
-                  token: {
-                    colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
-                    colorText: theme === "dark" ? "#ffffff" : "#0a0a0a",
-                    colorBorder: theme === "dark" ? "#bfbfbf" : "#d9d9d9",
-                    colorTextPlaceholder: theme === "dark" ? "#888888" : "#bfbfbf",
-                  },
-                }}
-              >
-                <Input
-                  type="file"
-                  accept="audio/*"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-              </ConfigProvider>
-              {audioFile ? (
-                <div className="text-sm text-foreground break-words">
-                  {audioFile.name}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Supported formats: WAV, MP3, M4A</p>
-              )}
-            </div>
           </Card>
 
           <Card
@@ -657,30 +529,23 @@ export const NewTranscription = () => {
 
             <div className="flex gap-2 mt-2">
               {!isRecording ? (
-                awaitingConfirmation ? (
-                  <>
-                    <Button onClick={discardTranscription} block>
-                      Discard
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={confirmTranscription}
-                      block
-                      loading={transcribing}
-                    >
-                      Confirm Transcription
-                    </Button>
-                  </>
-                ) : (
+                <>
                   <Button
                     onClick={startRecording}
                     icon={<Mic />}
                     block
-                    disabled={awaitingConfirmation}
+                    disabled={listening || speechSupported === false}
                   >
-                    Start
+                    {listening ? "Listening" : "Start"}
                   </Button>
-                )
+                  <Button
+                    onClick={discardTranscription}
+                    block
+                    disabled={(transcript ?? "").trim().length === 0}
+                  >
+                    Clear Transcript
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button

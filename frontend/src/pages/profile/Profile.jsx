@@ -93,17 +93,20 @@ export const Profile = () => {
       <div className="grid gap-6 md:grid-cols-2">
         <Card title="Personal Details" bordered={false} className="shadow-sm">
           <div className="space-y-5">
-            {personalDetails.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-start gap-3">
-                <div className="mt-1 rounded-full bg-blue-50 p-2 text-blue-600">
-                  <Icon className="h-4 w-4" />
+            {personalDetails.map(({ icon, label, value }) => {
+              const DetailIcon = icon;
+              return (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="mt-1 rounded-full bg-blue-50 p-2 text-blue-600">
+                    <DetailIcon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                    <p className="text-base text-foreground">{value}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                  <p className="text-base text-foreground">{value}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
