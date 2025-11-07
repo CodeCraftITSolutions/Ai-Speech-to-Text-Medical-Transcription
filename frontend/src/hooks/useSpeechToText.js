@@ -37,12 +37,18 @@ const useSpeechToText = (initialOptions = {}) => {
 
   useEffect(() => {
     if (isMicrophoneAvailable === false) {
+      restartOnEndRef.current = false;
       setError("speech-recognition-microphone-unavailable");
     }
   }, [isMicrophoneAvailable]);
 
   useEffect(() => {
     if (!restartOnEndRef.current) {
+      return;
+    }
+
+    if (isMicrophoneAvailable === false) {
+      restartOnEndRef.current = false;
       return;
     }
 
@@ -64,7 +70,7 @@ const useSpeechToText = (initialOptions = {}) => {
         setError(startError?.message ?? "speech-recognition-restart-error");
       }
     }
-  }, [listening]);
+  }, [isMicrophoneAvailable, listening]);
 
   const startListening = useCallback((options = {}) => {
     optionsRef.current = { ...optionsRef.current, ...options };
