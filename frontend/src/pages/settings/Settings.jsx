@@ -322,20 +322,16 @@ const SecurityCard = React.memo(function SecurityCard({ user, callWithAuth, refr
                     placeholder="Enter 6-digit code"
                     value={totpCode}
                     onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-                    className="w-full sm:w-64"
                   />
                   <Button
                     type="primary"
                     onClick={verifyTotp}
                     loading={totpBusy}
                     disabled={totpBusy}
-                    className="w-full sm:w-auto mt-2"
                   >
                     Verify & Enable
                   </Button>
-                </div>
-              </>
-
+                </>
               ) : (
                 <Button onClick={startTotpSetup} loading={totpBusy} disabled={totpBusy}>
                   Enable Two-Factor Authentication
