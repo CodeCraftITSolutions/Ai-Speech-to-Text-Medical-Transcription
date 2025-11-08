@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Spin } from "antd";
 import LoginForm from "../pages/login/Login.jsx";
 import SignupForm from "../pages/signup/Signup.jsx";
@@ -16,7 +16,12 @@ import ResetPassword from "../pages/resetPassword/ResetPassword.jsx";
 import { useUser } from "../context/UserContext.jsx";
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useUser();
+  const { isAuthenticated, loading, user } = useUser();
+  const location = useLocation();
+
+  const requiresProfileCompletion = Boolean(
+    user && (!user.firstName?.trim() || !user.lastName?.trim())
+  );
 
   if (loading) {
     return (
@@ -28,6 +33,19 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (
+    requiresProfileCompletion &&
+    !location.pathname.startsWith("/dashboard/settings")
+  ) {
+    return (
+      <Navigate
+        to="/dashboard/settings"
+        replace
+        state={{ from: location, requireProfile: true }}
+      />
+    );
   }
 
   return children;
