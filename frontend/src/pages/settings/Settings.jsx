@@ -22,6 +22,7 @@ import {
 import PhoneNumberInput from "../../components/phoneNumberInput/PhoneNumberInput";
 import { useUser } from "../../context/UserContext.jsx";
 import { useTheme } from "../../context/ThemeContext";
+import { useLocation } from "react-router-dom";
 import {
   changePassword,
   disableTotp,
@@ -516,11 +517,14 @@ const NotificationsCard = React.memo(function NotificationsCard({
 export const Settings = () => {
   const { user, callWithAuth, refreshUser } = useUser();
   const { theme: themeMode, toggleTheme } = useTheme();
+  const location = useLocation();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [profilePromptShown, setProfilePromptShown] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -528,6 +532,16 @@ export const Settings = () => {
     reviewRequired: true,
     systemUpdates: false,
   });
+
+  const isProfileComplete = useMemo(
+    () => Boolean(firstName.trim() && lastName.trim()),
+    [firstName, lastName]
+  );
+
+  const hasPersistedName = useMemo(
+    () => Boolean(user?.firstName?.trim() && user?.lastName?.trim()),
+    [user?.firstName, user?.lastName]
+  );
 
   // Initialize form state from user
   useEffect(() => {
@@ -546,17 +560,54 @@ export const Settings = () => {
     setPhoneNumber(full);
   }, []);
 
+  useEffect(() => {
+    if (!profilePromptShown && location.state?.requireProfile && !hasPersistedName) {
+      message.info("Please complete your profile before using the application.");
+      setProfilePromptShown(true);
+    }
+  }, [location.state, profilePromptShown, hasPersistedName]);
+
+  useEffect(() => {
+    if (!hasPersistedName && activeTab !== "profile") {
+      setActiveTab("profile");
+    }
+  }, [hasPersistedName, activeTab]);
+
+  const handleTabChange = useCallback(
+    (key) => {
+      if (!hasPersistedName && key !== "profile") {
+        message.warning("Please complete your profile information before continuing.");
+        return;
+      }
+      setActiveTab(key);
+    },
+    [hasPersistedName]
+  );
+
   const saveSettings = useCallback(async () => {
     if (!user) {
       message.error("You need to be signed in to update your settings.");
+      return;
+    }
+
+    const trimmedFirstName = firstName?.trim();
+    const trimmedLastName = lastName?.trim();
+
+    if (!trimmedFirstName) {
+      message.error("First name is required.");
+      return;
+    }
+
+    if (!trimmedLastName) {
+      message.error("Last name is required.");
       return;
     }
     try {
       setSaving(true);
       const normalizedPhone = phoneNumber?.replace(/\s+/g, "");
       await callWithAuth(updateCurrentUser, {
-        first_name: firstName?.trim() || null,
-        last_name: lastName?.trim() || null,
+        first_name: trimmedFirstName,
+        last_name: trimmedLastName,
         phone_number: normalizedPhone ? normalizedPhone : null,
       });
       await refreshUser();
@@ -662,7 +713,7 @@ export const Settings = () => {
           onClick={saveSettings}
           icon={<Save className="w-4 h-4" />}
           loading={saving}
-          disabled={saving || !user}
+          disabled={saving || !user || !isProfileComplete}
         >
           Save Changes
         </Button>
@@ -670,7 +721,8 @@ export const Settings = () => {
 
       <ConfigProvider theme={{ token: rootThemeTokens }}>
         <Tabs
-          defaultActiveKey="profile"
+          activeKey={activeTab}
+          onChange={handleTabChange}
           destroyInactiveTabPane={false}
           items={tabItems}
         />
