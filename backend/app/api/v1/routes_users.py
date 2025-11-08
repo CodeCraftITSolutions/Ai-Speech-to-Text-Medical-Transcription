@@ -16,7 +16,7 @@ def list_receptionists(
     _: object = Depends(auth.require_roles(UserRole.DOCTOR, UserRole.ADMIN)),
 ) -> list[schemas.UserListItem]:
     user_repo = repositories.UserRepository(db)
-    receptionists = user_repo.list_by_role(UserRole.RECEPTIONIST.value)
+    receptionists = user_repo.list_by_role(UserRole.TRANSCRIPTIONIST.value)
     return [schemas.UserListItem.model_validate(user) for user in receptionists]
 
 

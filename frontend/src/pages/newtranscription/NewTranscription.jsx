@@ -40,7 +40,7 @@ export const NewTranscription = () => {
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [specialty, setSpecialty] = useState("");
+  const [specialty, setSpecialty] = useState(null);
   const [sendToTranscriptionist, setSendToTranscriptionist] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -406,7 +406,7 @@ export const NewTranscription = () => {
         patient_identifier: patientId.trim(),
         patient_name: patientName.trim(),
         patient_date_of_birth: dateOfBirth || null,
-        doctor_specialty: specialty ? specialty.trim() : null,
+        doctor_specialty: typeof specialty === "string" ? specialty.trim() : null,
         transcript_text: normalizedTranscript,
         receptionist_id: receptionistId ?? null,
       });
@@ -578,7 +578,8 @@ export const NewTranscription = () => {
                 }}
               >
                 <Select
-                  value={specialty}
+                  allowClear
+                  value={specialty ?? undefined}
                   onChange={(value) => setSpecialty(value)}
                   placeholder="Select specialty"
                   style={{ width: "100%" }}
