@@ -50,18 +50,13 @@ export const Profile = () => {
     {
       icon: Mail,
       label: "Email address",
-      value: email,
+      value: username,
     },
     {
       icon: Phone,
       label: "Phone number",
       value: phone || "Not provided",
-    },
-    {
-      icon: IdCard,
-      label: "Username",
-      value: username,
-    },
+    }    
   ];
 
   return (
@@ -78,7 +73,7 @@ export const Profile = () => {
             </Avatar>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold text-foreground">{displayName}</h1>
-              <p className="text-muted-foreground">{email}</p>
+              <p className="text-muted-foreground">{username}</p>
               <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
                 {(isDoctor || specialtyValue) && (
                   <Tag color="blue" className="flex items-center gap-2">
