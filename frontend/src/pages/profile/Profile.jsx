@@ -29,7 +29,11 @@ export const Profile = () => {
   const email = user?.email ?? "Not provided";
   const phone = user?.phoneNumber ?? user?.phone ?? "Not provided";
   const role = user?.role ?? "Member";
-  const specialty = user?.specialty ?? "General";
+  const isDoctor = user?.role === "doctor";
+  const specialtyValue = typeof user?.specialty === "string" ? user.specialty.trim() : "";
+  const specialty = isDoctor
+    ? specialtyValue || "Not specified"
+    : specialtyValue || "General Practice";
   const username = user?.username ?? "Not provided";
 
   const personalDetails = [
@@ -76,10 +80,12 @@ export const Profile = () => {
               <h1 className="text-3xl font-semibold text-foreground">{displayName}</h1>
               <p className="text-muted-foreground">{email}</p>
               <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                <Tag color="blue" className="flex items-center gap-2">
-                  <BriefcaseMedical className="h-4 w-4" />
-                  <span>{specialty}</span>
-                </Tag>
+                {(isDoctor || specialtyValue) && (
+                  <Tag color="blue" className="flex items-center gap-2">
+                    <BriefcaseMedical className="h-4 w-4" />
+                    <span>{specialty}</span>
+                  </Tag>
+                )}
                 <Tag color="green" className="flex items-center gap-2 capitalize">
                   <ShieldCheck className="h-4 w-4" />
                   <span>{role}</span>
