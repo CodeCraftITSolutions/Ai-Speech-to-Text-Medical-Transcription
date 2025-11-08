@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../context/UserContext.jsx";
+import { Navigate } from "react-router-dom";
 import {
   Stethoscope,
   Mic,
@@ -23,8 +25,12 @@ import { Badge, Button, Card, Col, Input, Row, Flex, Rate, Space } from "antd";
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const {isAuthenticated} = useUser();
   const navigate = useNavigate();
 
+ if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  } 
 const handleGetStarted = () => {
   navigate("/signup");
 };
