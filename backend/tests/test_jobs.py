@@ -9,7 +9,12 @@ from app.infra import auth
 
 def test_create_and_get_job(db_session: Session, monkeypatch) -> None:
     user_repo = repositories.UserRepository(db_session)
-    user_db = user_repo.create("clinician", auth.hash_password("securepass"), "doctor")
+    user_db = user_repo.create(
+        "clinician",
+        auth.hash_password("securepass"),
+        "doctor",
+        specialty="Cardiology",
+    )
 
     dummy_queue = types.SimpleNamespace(enqueued=[])  # type: ignore[attr-defined]
 

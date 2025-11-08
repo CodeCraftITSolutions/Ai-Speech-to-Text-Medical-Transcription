@@ -7,7 +7,12 @@ from app.infra import auth
 
 def test_create_and_fetch_report(db_session: Session, monkeypatch) -> None:
     user_repo = repositories.UserRepository(db_session)
-    doctor = user_repo.create("dr-report", auth.hash_password("securepass"), "doctor")
+    doctor = user_repo.create(
+        "dr-report",
+        auth.hash_password("securepass"),
+        "doctor",
+        specialty="Radiology",
+    )
 
     stored = {}
 

@@ -26,6 +26,7 @@ class User(Base):
     phone_number: Optional[str] = Column(String(32), nullable=True)
     hashed_password: str = Column(String(255), nullable=False)
     role: str = Column(String(50), nullable=False, default=UserRole.TRANSCRIPTIONIST.value)
+    specialty: Optional[str] = Column(String(255), nullable=True)
     totp_secret: Optional[str] = Column(String(255), nullable=True)
     totp_secret_pending: Optional[str] = Column(String(255), nullable=True)
     totp_enabled: bool = Column(Boolean, nullable=False, default=False)

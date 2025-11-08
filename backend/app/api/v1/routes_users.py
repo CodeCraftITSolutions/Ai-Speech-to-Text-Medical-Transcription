@@ -37,6 +37,9 @@ def update_me(
                 value = None
         sanitized[field] = value
 
+    if "specialty" in sanitized and current_user.role != UserRole.DOCTOR.value:
+        sanitized.pop("specialty")
+
     updated_user = user_repo.update(current_user, **sanitized)
     return schemas.UserRead.from_orm(updated_user)
 
