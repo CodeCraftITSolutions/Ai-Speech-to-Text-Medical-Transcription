@@ -372,10 +372,18 @@ export const NewTranscription = () => {
       return;
     }
 
-    setTranscript(normalizedTranscript);
+    setTranscript((currentTranscript) => {
+      const existingTranscript = (currentTranscript ?? "").trim();
+
+      if (!existingTranscript) {
+        return normalizedTranscript;
+      }
+
+      return `${existingTranscript}\n\n${normalizedTranscript}`;
+    });
     resetTranscript();
     setPendingTranscript("");
-    message.success("Transcript confirmed from the latest recording");
+    message.success("Transcript appended from the latest recording");
   };
 
   const saveDraft = async () => {
