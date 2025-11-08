@@ -33,6 +33,22 @@ import {
 
 const { Option } = Select;
 
+const SPECIALTY_OPTIONS = [
+  "Cardiology",
+  "Dermatology",
+  "Emergency Medicine",
+  "Family Medicine",
+  "Internal Medicine",
+  "Neurology",
+  "Obstetrics & Gynecology",
+  "Oncology",
+  "Orthopedics",
+  "Pediatrics",
+  "Psychiatry",
+  "Radiology",
+  "Surgery",
+];
+
 /* --------------------------- Memoized subcomponents -------------------------- */
 
 const ProfileCard = React.memo(function ProfileCard({
@@ -43,6 +59,8 @@ const ProfileCard = React.memo(function ProfileCard({
   setLastName,
   phoneNumber,
   handlePhoneChange,
+  specialty,
+  setSpecialty,
 }) {
   const username = user?.username ?? "";
 
@@ -68,15 +86,19 @@ const ProfileCard = React.memo(function ProfileCard({
       <div className="mb-2">
         {user?.role === "doctor" && (
           <Select
-            defaultValue={user?.specialty?.toLowerCase()}
+            value={specialty || undefined}
+            onChange={(value) => setSpecialty(value || "")}
+            allowClear
+            showSearch
+            placeholder="Select specialty"
+            optionFilterProp="children"
             className="mt-4 w-full"
           >
-            <Option value="cardiology">Cardiology</Option>
-            <Option value="neurology">Neurology</Option>
-            <Option value="orthopedics">Orthopedics</Option>
-            <Option value="internal-medicine">Internal Medicine</Option>
-            <Option value="pediatrics">Pediatrics</Option>
-            <Option value="surgery">Surgery</Option>
+            {SPECIALTY_OPTIONS.map((option) => (
+              <Option key={option} value={option}>
+                {option}
+              </Option>
+            ))}
           </Select>
         )}
       </div>
@@ -522,6 +544,7 @@ export const Settings = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [specialty, setSpecialty] = useState("");
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [profilePromptShown, setProfilePromptShown] = useState(false);
@@ -533,10 +556,15 @@ export const Settings = () => {
     systemUpdates: false,
   });
 
-  const isProfileComplete = useMemo(
-    () => Boolean(firstName.trim() && lastName.trim()),
-    [firstName, lastName]
-  );
+  const isProfileComplete = useMemo(() => {
+    if (!firstName.trim() || !lastName.trim()) {
+      return false;
+    }
+    if (user?.role === "doctor") {
+      return Boolean(specialty.trim());
+    }
+    return true;
+  }, [firstName, lastName, specialty, user?.role]);
 
   const hasPersistedName = useMemo(
     () => Boolean(user?.firstName?.trim() && user?.lastName?.trim()),
@@ -549,11 +577,13 @@ export const Settings = () => {
       setFirstName("");
       setLastName("");
       setPhoneNumber("");
+      setSpecialty("");
       return;
     }
     setFirstName(user.firstName ?? "");
     setLastName(user.lastName ?? "");
     setPhoneNumber(user.phoneNumber ?? "");
+    setSpecialty(user.specialty ?? "");
   }, [user]);
 
   const handlePhoneChange = useCallback((full) => {
@@ -605,11 +635,18 @@ export const Settings = () => {
     try {
       setSaving(true);
       const normalizedPhone = phoneNumber?.replace(/\s+/g, "");
-      await callWithAuth(updateCurrentUser, {
+      const payload = {
         first_name: trimmedFirstName,
         last_name: trimmedLastName,
         phone_number: normalizedPhone ? normalizedPhone : null,
-      });
+      };
+
+      if (user?.role === "doctor") {
+        const normalizedSpecialty = specialty.trim();
+        payload.specialty = normalizedSpecialty ? normalizedSpecialty : null;
+      }
+
+      await callWithAuth(updateCurrentUser, payload);
       await refreshUser();
       message.success("Settings saved successfully!");
     } catch (error) {
@@ -617,7 +654,15 @@ export const Settings = () => {
     } finally {
       setSaving(false);
     }
-  }, [user, phoneNumber, firstName, lastName, callWithAuth, refreshUser]);
+  }, [
+    user,
+    phoneNumber,
+    firstName,
+    lastName,
+    specialty,
+    callWithAuth,
+    refreshUser,
+  ]);
 
   /* ----------------------- Stable theme token objects ---------------------- */
   const rootThemeTokens = useMemo(
@@ -649,6 +694,8 @@ export const Settings = () => {
             setLastName={setLastName}
             phoneNumber={phoneNumber}
             handlePhoneChange={handlePhoneChange}
+            specialty={specialty}
+            setSpecialty={setSpecialty}
           />
         ),
       },
@@ -693,6 +740,8 @@ export const Settings = () => {
       lastName,
       phoneNumber,
       handlePhoneChange,
+      specialty,
+      setSpecialty,
       toggleTheme,
       notifications,
       callWithAuth,

@@ -28,6 +28,7 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     phone_number: Optional[str] = None
+    specialty: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -38,6 +39,7 @@ class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     phone_number: Optional[str] = None
+    specialty: Optional[str] = None
 
 
 class UserRead(UserBase):
@@ -55,6 +57,7 @@ class UserListItem(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     role: str
+    specialty: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

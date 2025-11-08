@@ -53,9 +53,11 @@ def test_patient_repository_get_by_identifier(db_session):
 def test_user_repository_list_by_role(db_session):
     user_repo = repositories.UserRepository(db_session)
 
-    user_repo.create("doc", "hashed", UserRole.DOCTOR.value)
+    doctor = user_repo.create("doc", "hashed", UserRole.DOCTOR.value, specialty="Cardiology")
     user_repo.create("rec-1", "hashed", UserRole.RECEPTIONIST.value)
     user_repo.create("rec-2", "hashed", UserRole.RECEPTIONIST.value)
+
+    assert doctor.specialty == "Cardiology"
 
     receptionists = user_repo.list_by_role(UserRole.RECEPTIONIST.value)
 

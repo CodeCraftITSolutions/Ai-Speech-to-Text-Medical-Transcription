@@ -25,7 +25,16 @@ def register(
         role_value = UserRole(payload.role).value
     except ValueError as exc:
         raise HTTPException(status_code=400, detail='Invalid role') from exc
-    user = user_repo.create(payload.username, hashed, role_value)
+    specialty = payload.specialty.strip() if payload.specialty else None
+    if role_value != UserRole.DOCTOR.value:
+        specialty = None
+
+    user = user_repo.create(
+        payload.username,
+        hashed,
+        role_value,
+        specialty=specialty,
+    )
     return schemas.UserRead.from_orm(user)
 
 

@@ -15,6 +15,7 @@ const normalizeUser = (user) => {
   const firstName = user.first_name ?? null;
   const lastName = user.last_name ?? null;
   const phoneNumber = user.phone_number ?? null;
+  const specialty = user.specialty ?? null;
   const displayName = [firstName, lastName].filter(Boolean).join(" ") || user.username;
   const totpEnabled = Boolean(user.totp_enabled);
 
@@ -28,6 +29,7 @@ const normalizeUser = (user) => {
     firstName,
     lastName,
     phoneNumber,
+    specialty,
     totpEnabled,
   };
 };

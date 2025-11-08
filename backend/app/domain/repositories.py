@@ -24,8 +24,23 @@ class UserRepository:
             .all()
         )
 
-    def create(self, username: str, hashed_password: str, role: str) -> models.User:
-        user = models.User(username=username, hashed_password=hashed_password, role=role)
+    def create(
+        self,
+        username: str,
+        hashed_password: str,
+        role: str,
+        specialty: Optional[str] = None,
+    ) -> models.User:
+        normalized_specialty = specialty.strip() if isinstance(specialty, str) else None
+        if not normalized_specialty:
+            normalized_specialty = None
+
+        user = models.User(
+            username=username,
+            hashed_password=hashed_password,
+            role=role,
+            specialty=normalized_specialty,
+        )
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
