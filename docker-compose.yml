@@ -1,0 +1,89 @@
+# ------------------------
+# Application stack definition
+# ------------------------
+# This docker-compose file orchestrates the backend API, frontend SPA, and supporting services.
+version: "3.9"
+
+services:
+  backend:
+    # Build the FastAPI backend image using the Dockerfile in the backend directory.
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medical-transcription-backend
+    # Load common configuration values from the shared .env file.
+    env_file:
+      - .env
+    environment:
+      # Pass through variables that need to be available at runtime.
+      DATABASE_URL: ${DATABASE_URL}
+      BROKER_URL: ${BROKER_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_KEY: ${STORAGE_KEY}
+      STORAGE_SECRET: ${STORAGE_SECRET}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+      ASR_MODEL: ${ASR_MODEL}
+    depends_on:
+      - db
+      - redis
+      - minio
+    ports:
+      # Expose the API on localhost:8000.
+      - "8000:8000"
+    volumes:
+      # Mount the migrations for easier iteration during development (optional).
+      - ./backend/migrations:/app/migrations
+
+  frontend:
+    # Build the React frontend image using the Dockerfile in the frontend directory.
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medical-transcription-frontend
+    depends_on:
+      - backend
+    ports:
+      # Serve the compiled SPA through NGINX on localhost:3000.
+      - "3000:80"
+
+  db:
+    # PostgreSQL database used by the backend service.
+    image: postgres:15
+    container_name: medical-transcription-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      # Persist database data between restarts.
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    # Redis instance for background job queuing and caching.
+    image: redis:7
+    container_name: medical-transcription-redis
+    ports:
+      - "6379:6379"
+
+  minio:
+    # MinIO provides S3-compatible object storage for transcription assets.
+    image: minio/minio
+    container_name: medical-transcription-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+volumes:
+  # Named volumes keep stateful service data outside of the containers.
+  pgdata:
+  minio-data:
