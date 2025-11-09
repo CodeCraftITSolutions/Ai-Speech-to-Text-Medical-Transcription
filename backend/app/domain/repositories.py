@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -58,8 +59,14 @@ class JobRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, user_id: int, job_in: schemas.JobCreate) -> models.Job:
-        job = models.Job(user_id=user_id, type=job_in.type, input_uri=job_in.input_uri)
+    def create(self, created_by_id: int, job_in: schemas.JobCreate) -> models.Job:
+        job = models.Job(
+            created_by_id=created_by_id,
+            type=job_in.type,
+            input_uri=job_in.input_uri,
+            transcription_id=job_in.transcription_id,
+            assignee_id=job_in.assignee_id,
+        )
         self.db.add(job)
         self.db.commit()
         self.db.refresh(job)
@@ -71,7 +78,12 @@ class JobRepository:
     def list_for_user(self, user_id: int):
         return (
             self.db.query(models.Job)
-            .filter(models.Job.user_id == user_id)
+            .filter(
+                or_(
+                    models.Job.created_by_id == user_id,
+                    models.Job.assignee_id == user_id,
+                )
+            )
             .order_by(models.Job.created_at.desc())
             .all()
         )
@@ -84,7 +96,13 @@ class JobRepository:
         )
         return (
             self.db.query(models.Job)
-            .filter(models.Job.user_id == user_id, models.Job.status.in_(queue_statuses))
+            .filter(
+                or_(
+                    models.Job.created_by_id == user_id,
+                    models.Job.assignee_id == user_id,
+                ),
+                models.Job.status.in_(queue_statuses),
+            )
             .order_by(models.Job.created_at.asc())
             .all()
         )

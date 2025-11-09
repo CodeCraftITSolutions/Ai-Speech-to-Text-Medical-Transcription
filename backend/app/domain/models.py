@@ -35,7 +35,17 @@ class User(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    jobs = relationship("Job", back_populates="user", cascade="all,delete-orphan")
+    owned_jobs = relationship(
+        "Job",
+        back_populates="created_by",
+        cascade="all,delete-orphan",
+        foreign_keys="Job.created_by_id",
+    )
+    assigned_jobs = relationship(
+        "Job",
+        back_populates="assignee",
+        foreign_keys="Job.assignee_id",
+    )
 
 
 class JobStatus(str, PyEnum):
@@ -53,13 +63,27 @@ class Job(Base):
     status: str = Column(String(50), nullable=False, default=JobStatus.PENDING.value)
     input_uri: Optional[str] = Column(Text, nullable=True)
     output_uri: Optional[str] = Column(Text, nullable=True)
-    user_id: int = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    created_by_id: int = Column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
+    assignee_id: Optional[int] = Column(
+        Integer, ForeignKey("users.id"), nullable=True, index=True
+    )
+    transcription_id: Optional[int] = Column(
+        Integer, ForeignKey("transcriptions.id"), nullable=True, index=True
+    )
     created_at: datetime = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: datetime = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    user = relationship("User", back_populates="jobs")
+    created_by = relationship(
+        "User", back_populates="owned_jobs", foreign_keys=[created_by_id]
+    )
+    assignee = relationship(
+        "User", back_populates="assigned_jobs", foreign_keys=[assignee_id]
+    )
+    transcription = relationship("Transcription", back_populates="job")
 
 
 class Report(Base):
@@ -106,4 +130,5 @@ class Transcription(Base):
 
     patient = relationship("Patient", back_populates="transcriptions")
     receptionist = relationship("User")
+    job = relationship("Job", back_populates="transcription", uselist=False)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.domain import repositories, schemas
-from app.domain.models import UserRole
+from app.domain.models import User, UserRole
 from app.infra import auth
 from app.infra.db import get_db
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/v1/transcriptions", tags=["transcriptions"])
 def create_transcription(
     payload: schemas.TranscriptionCreate,
     db: Session = Depends(get_db),
-    _: object = Depends(auth.require_roles(UserRole.DOCTOR, UserRole.ADMIN)),
+    current_user: User = Depends(auth.require_roles(UserRole.DOCTOR, UserRole.ADMIN)),
 ) -> schemas.TranscriptionRead:
     patient_identifier = payload.patient_identifier.strip()
     patient_name = payload.patient_name.strip()
@@ -29,6 +29,7 @@ def create_transcription(
     patient_repo = repositories.PatientRepository(db)
     transcription_repo = repositories.TranscriptionRepository(db)
     user_repo = repositories.UserRepository(db)
+    job_repo = repositories.JobRepository(db)
 
     patient = patient_repo.get_by_identifier(patient_identifier)
     if patient:
@@ -59,6 +60,15 @@ def create_transcription(
         doctor_specialty=doctor_specialty,
         transcript_text=transcript_text,
         receptionist_id=receptionist_id,
+    )
+
+    job_repo.create(
+        created_by_id=current_user.id,
+        job_in=schemas.JobCreate(
+            type="transcription",
+            transcription_id=transcription.id,
+            assignee_id=receptionist_id,
+        ),
     )
 
     return schemas.TranscriptionRead.model_validate(transcription)
