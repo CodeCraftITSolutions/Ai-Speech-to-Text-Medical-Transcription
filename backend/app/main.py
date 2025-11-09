@@ -13,6 +13,7 @@ from app.api.v1 import (
     routes_transcribe,
     routes_users,
 )
+from app.infra.db import run_migrations
 from app.infra.logging import logger
 from app.infra.telemetry import record_metrics
 from app.settings import get_settings
@@ -44,6 +45,12 @@ app.include_router(routes_users.router)
 async def startup_event() -> None:
     logger.info("Starting %s in %s", settings.APP_NAME, settings.ENV)
     logger.info("CORS allow_origins: %s", settings.frontend_origins)
+
+    try:
+        run_migrations()
+    except Exception:
+        logger.exception("Failed to run database migrations during startup")
+        raise
 
 
 @app.on_event("shutdown")
