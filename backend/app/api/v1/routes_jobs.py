@@ -31,6 +31,28 @@ def list_jobs(
     return [schemas.JobRead.from_orm(job) for job in jobs]
 
 
+@router.get("/history", response_model=schemas.JobHistoryResponse)
+def get_job_history(
+    current_user: User = Depends(auth.get_current_user),
+    job_repo: repositories.JobRepository = Depends(deps.get_job_repository),
+):
+    jobs = job_repo.list_for_user(current_user.id)
+    job_items = [schemas.JobRead.from_orm(job) for job in jobs]
+    stats = schemas.JobStats.from_jobs(job_items)
+    return schemas.JobHistoryResponse(jobs=job_items, stats=stats)
+
+
+@router.get("/review-queue", response_model=schemas.JobQueueResponse)
+def get_review_queue(
+    current_user: User = Depends(auth.get_current_user),
+    job_repo: repositories.JobRepository = Depends(deps.get_job_repository),
+):
+    jobs = job_repo.list_for_review_queue(current_user.id)
+    job_items = [schemas.JobRead.from_orm(job) for job in jobs]
+    stats = schemas.JobQueueStats.from_jobs(job_items)
+    return schemas.JobQueueResponse(jobs=job_items, stats=stats)
+
+
 @router.get("/{job_id}", response_model=schemas.JobRead)
 def get_job(
     job_id: int,

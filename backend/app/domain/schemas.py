@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Any, Optional, Sequence
 
 from pydantic import BaseModel, Field
 from pydantic import ConfigDict
@@ -101,6 +101,86 @@ class JobRead(JobBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+def _normalise_status(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip().lower()
+
+
+class JobStats(BaseModel):
+    total: int
+    pending: int
+    processing: int
+    completed: int
+    failed: int
+    unknown: int
+    in_queue: int
+    ready_for_review: int
+
+    @classmethod
+    def from_jobs(cls, jobs: Sequence[Any]) -> "JobStats":
+        counts = {"pending": 0, "processing": 0, "completed": 0, "failed": 0, "unknown": 0}
+        for job in jobs:
+            status = _normalise_status(getattr(job, "status", None))
+            if status in counts:
+                counts[status] += 1
+            elif status:
+                counts["unknown"] += 1
+            else:
+                counts["unknown"] += 1
+
+        total = len(jobs)
+        in_queue = counts["pending"] + counts["processing"]
+        ready_for_review = counts["completed"]
+        return cls(
+            total=total,
+            pending=counts["pending"],
+            processing=counts["processing"],
+            completed=counts["completed"],
+            failed=counts["failed"],
+            unknown=counts["unknown"],
+            in_queue=in_queue,
+            ready_for_review=ready_for_review,
+        )
+
+
+class JobHistoryResponse(BaseModel):
+    jobs: list[JobRead]
+    stats: JobStats
+
+
+class JobQueueStats(BaseModel):
+    total: int
+    pending: int
+    processing: int
+    completed: int
+    in_progress: int
+    ready_for_review: int
+
+    @classmethod
+    def from_jobs(cls, jobs: Sequence[Any]) -> "JobQueueStats":
+        counts = {"pending": 0, "processing": 0, "completed": 0}
+        for job in jobs:
+            status = _normalise_status(getattr(job, "status", None))
+            if status in counts:
+                counts[status] += 1
+        in_progress = counts["pending"] + counts["processing"]
+        ready_for_review = counts["completed"]
+        return cls(
+            total=len(jobs),
+            pending=counts["pending"],
+            processing=counts["processing"],
+            completed=counts["completed"],
+            in_progress=in_progress,
+            ready_for_review=ready_for_review,
+        )
+
+
+class JobQueueResponse(BaseModel):
+    jobs: list[JobRead]
+    stats: JobQueueStats
 
 
 class ReportCreate(BaseModel):

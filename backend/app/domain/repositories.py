@@ -76,6 +76,19 @@ class JobRepository:
             .all()
         )
 
+    def list_for_review_queue(self, user_id: int):
+        queue_statuses = (
+            models.JobStatus.PENDING.value,
+            models.JobStatus.PROCESSING.value,
+            models.JobStatus.COMPLETED.value,
+        )
+        return (
+            self.db.query(models.Job)
+            .filter(models.Job.user_id == user_id, models.Job.status.in_(queue_statuses))
+            .order_by(models.Job.created_at.asc())
+            .all()
+        )
+
     def update_status(self, job_id: int, status: str, output_uri: Optional[str] = None) -> Optional[models.Job]:
         job = self.get(job_id)
         if job:
