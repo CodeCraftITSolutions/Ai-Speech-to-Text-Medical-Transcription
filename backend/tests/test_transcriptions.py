@@ -1,38 +1,59 @@
 from datetime import date
 
-from app.domain import repositories
+from app.api.v1 import routes_transcriptions
+from app.domain import repositories, schemas
 from app.domain.models import UserRole
+from app.infra import auth
 
 
 def test_create_transcription_with_patient_and_receptionist(db_session):
     user_repo = repositories.UserRepository(db_session)
     patient_repo = repositories.PatientRepository(db_session)
-    transcription_repo = repositories.TranscriptionRepository(db_session)
 
+    doctor = user_repo.create(
+        username="doctor1",
+        hashed_password=auth.hash_password("doctorpass"),
+        role=UserRole.DOCTOR.value,
+    )
     receptionist = user_repo.create(
         username="receptionist1",
-        hashed_password="hashed-password",
+        hashed_password=auth.hash_password("assistantpass"),
         role=UserRole.RECEPTIONIST.value,
     )
 
-    patient = patient_repo.create(
+    payload = schemas.TranscriptionCreate(
         patient_identifier="PAT-123",
         patient_name="John Doe",
         patient_date_of_birth=date(1985, 5, 20),
-    )
-
-    transcription = transcription_repo.create(
-        patient_id=patient.id,
         doctor_specialty="cardiology",
         transcript_text="Patient is recovering well.",
         receptionist_id=receptionist.id,
     )
 
-    assert transcription.patient_id == patient.id
-    assert transcription.receptionist_id == receptionist.id
-    assert transcription.transcript_text == "Patient is recovering well."
+    transcription = routes_transcriptions.create_transcription(
+        payload,
+        db=db_session,
+        current_user=doctor,
+    )
+
     assert transcription.patient.patient_name == "John Doe"
     assert transcription.patient.patient_identifier == "PAT-123"
+    assert transcription.receptionist_id == receptionist.id
+    assert transcription.transcript_text == "Patient is recovering well."
+
+    stored_patient = patient_repo.get_by_identifier("PAT-123")
+    assert stored_patient is not None
+    assert stored_patient.patient_name == "John Doe"
+
+    job_repo = repositories.JobRepository(db_session)
+    doctor_jobs = job_repo.list_for_user(doctor.id)
+    assert len(doctor_jobs) == 1
+    job = doctor_jobs[0]
+    assert job.transcription_id == transcription.id
+    assert job.assignee_id == receptionist.id
+
+    receptionist_jobs = job_repo.list_for_user(receptionist.id)
+    assert {item.id for item in receptionist_jobs} == {job.id}
 
 
 def test_patient_repository_get_by_identifier(db_session):

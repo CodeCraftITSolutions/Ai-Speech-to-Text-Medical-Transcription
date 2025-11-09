@@ -60,7 +60,10 @@ def get_job(
     job_repo: repositories.JobRepository = Depends(deps.get_job_repository),
 ):
     job = job_repo.get(job_id)
-    if not job or job.user_id != current_user.id:
+    if not job or (
+        job.created_by_id != current_user.id
+        and job.assignee_id != current_user.id
+    ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
     return schemas.JobRead.from_orm(job)
 

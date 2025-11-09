@@ -87,6 +87,8 @@ class TOTPStatus(BaseModel):
 class JobBase(BaseModel):
     type: str
     input_uri: Optional[str] = None
+    transcription_id: Optional[int] = None
+    assignee_id: Optional[int] = None
 
 
 class JobCreate(JobBase):
@@ -97,6 +99,7 @@ class JobRead(JobBase):
     id: int
     status: str
     output_uri: Optional[str] = None
+    created_by_id: int
     created_at: datetime
     updated_at: datetime
 
