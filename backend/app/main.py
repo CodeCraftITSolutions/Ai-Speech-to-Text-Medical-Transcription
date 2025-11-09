@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -47,7 +49,7 @@ async def startup_event() -> None:
     logger.info("CORS allow_origins: %s", settings.frontend_origins)
 
     try:
-        run_migrations()
+        await asyncio.to_thread(run_migrations)
     except Exception:
         logger.exception("Failed to run database migrations during startup")
         raise
