@@ -20,8 +20,9 @@ COPY pyproject.toml poetry.lock* ./
 # Install Poetry and use it to install application dependencies without creating a virtualenv.
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi && \
-    pip install asyncpg psycopg2-binary
+    poetry install --no-interaction --no-ansi 
+    
+RUN pip install psycopg2-binary
 # ------------------------
 # Copy application source code
 # ------------------------
@@ -34,4 +35,6 @@ COPY alembic.ini ./alembic.ini
 # ------------------------
 # Expose the port used by Uvicorn and set the default command to run the API server.
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+
