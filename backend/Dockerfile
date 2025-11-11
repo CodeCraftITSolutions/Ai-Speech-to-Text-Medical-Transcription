@@ -20,8 +20,8 @@ COPY pyproject.toml poetry.lock* ./
 # Install Poetry and use it to install application dependencies without creating a virtualenv.
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi
-
+    poetry install --no-interaction --no-ansi && \
+    pip install asyncpg psycopg2-binary
 # ------------------------
 # Copy application source code
 # ------------------------

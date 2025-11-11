@@ -46,7 +46,7 @@ services:
       - backend
     ports:
       # Serve the compiled SPA through NGINX on localhost:3000.
-      - "3000:80"
+      - "5173:80"
 
   db:
     # PostgreSQL database used by the backend service.
