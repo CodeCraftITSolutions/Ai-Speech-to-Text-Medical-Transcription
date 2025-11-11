@@ -50,7 +50,7 @@ def create_transcription(
         receptionist = user_repo.get(receptionist_id)
         if receptionist is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Selected receptionist does not exist")
-        if receptionist.role != UserRole.RECEPTIONIST.value:
+        if receptionist.role != UserRole.TRANSCRIPTIONIST.value:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Selected user is not a receptionist")
 
     doctor_specialty = payload.doctor_specialty.strip() if payload.doctor_specialty else None
