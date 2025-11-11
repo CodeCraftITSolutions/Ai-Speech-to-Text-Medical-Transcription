@@ -1,22 +1,16 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1])) 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
-import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy import engine_from_config, pool
 
 from app.domain.models import Base
 from app.settings import get_settings
-
-import asyncio, sys
-if sys.platform.startswith("win"):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -47,17 +41,14 @@ def do_run_migrations(connection):
 
 
 def run_migrations_online() -> None:
-    connectable = async_engine_from_config(
+    connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    async def run_migrations() -> None:
-        async with connectable.connect() as connection:
-            await connection.run_sync(do_run_migrations)
-
-    asyncio.run(run_migrations())
+    with connectable.connect() as connection:
+        do_run_migrations(connection)
 
 
 if context.is_offline_mode():
